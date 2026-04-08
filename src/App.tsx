@@ -68,46 +68,46 @@ const SkillIcon = ({ name, className }: { name: string; className?: string }) =>
 
 const PETS = [
   // Tier 1: The original 4 pets
-  { id: 1, tier: 1, emoji: '🐶', name: '小狗', power: 80, price: 5 },
-  { id: 2, tier: 1, emoji: '🐱', name: '貓咪', power: 40, price: 2 },
-  { id: 3, tier: 1, emoji: '🐰', name: '小兔子', power: 20, price: 1 },
-  { id: 4, tier: 1, emoji: '🦊', name: '狐狸', power: 100, price: 7 },
+  { id: 1, tier: 1, emoji: '🐶', name: '小狗', power: 7, price: 5 },
+  { id: 2, tier: 1, emoji: '🐱', name: '貓咪', power: 5, price: 2 },
+  { id: 3, tier: 1, emoji: '🐰', name: '小兔子', power: 3, price: 1 },
+  { id: 4, tier: 1, emoji: '🦊', name: '狐狸', power: 10, price: 7 },
   
   // Tier 2
-  { id: 5, tier: 2, emoji: '🐼', name: '熊貓', power: 150, price: 12 },
-  { id: 6, tier: 2, emoji: '🐨', name: '無尾熊', power: 180, price: 15 },
+  { id: 5, tier: 2, emoji: '🐼', name: '熊貓', power: 15, price: 12 },
+  { id: 6, tier: 2, emoji: '🐨', name: '無尾熊', power: 20, price: 15 },
   
   // Tier 3
-  { id: 7, tier: 3, emoji: '🦁', name: '獅子', power: 250, price: 20 },
-  { id: 8, tier: 3, emoji: '🐯', name: '老虎', power: 300, price: 25 },
+  { id: 7, tier: 3, emoji: '🦁', name: '獅子', power: 50, price: 20 },
+  { id: 8, tier: 3, emoji: '🐯', name: '老虎', power: 60, price: 25 },
   
   // Tier 4
-  { id: 9, tier: 4, emoji: '🐸', name: '青蛙', power: 350, price: 30 },
-  { id: 10, tier: 4, emoji: '🐵', name: '猴子', power: 400, price: 33 },
+  { id: 9, tier: 4, emoji: '🐸', name: '青蛙', power: 75, price: 30 },
+  { id: 10, tier: 4, emoji: '🐵', name: '猴子', power: 80, price: 33 },
   
   // Tier 5
-  { id: 11, tier: 5, emoji: '🐔', name: '公雞', power: 450, price: 40 },
-  { id: 12, tier: 5, emoji: '🐧', name: '企鵝', power: 500, price: 44 },
+  { id: 11, tier: 5, emoji: '🐔', name: '公雞', power: 90, price: 40 },
+  { id: 12, tier: 5, emoji: '🐧', name: '企鵝', power: 100, price: 44 },
   
   // Tier 6
-  { id: 13, tier: 6, emoji: '🐷', name: '小豬', power: 600, price: 50 },
-  { id: 14, tier: 6, emoji: '🐮', name: '小牛', power: 700, price: 70 },
+  { id: 13, tier: 6, emoji: '🐷', name: '小豬', power: 120, price: 50 },
+  { id: 14, tier: 6, emoji: '🐮', name: '小牛', power: 125, price: 70 },
   
   // Tier 7
-  { id: 15, tier: 7, emoji: '🐘', name: '大象', power: 1000, price: 90 },
-  { id: 16, tier: 7, emoji: '🦒', name: '長頸鹿', power: 1200, price: 120 },
+  { id: 15, tier: 7, emoji: '🐘', name: '大象', power: 140, price: 90 },
+  { id: 16, tier: 7, emoji: '🦒', name: '長頸鹿', power: 150, price: 120 },
   
   // Tier 8
-  { id: 17, tier: 8, emoji: '🐙', name: '章魚', power: 1500, price: 135 },
-  { id: 18, tier: 8, emoji: '🦑', name: '烏賊', power: 1800, price: 150 },
+  { id: 17, tier: 8, emoji: '🐙', name: '章魚', power: 175, price: 135 },
+  { id: 18, tier: 8, emoji: '🦑', name: '烏賊', power: 190, price: 150 },
   
   // Tier 9
-  { id: 19, tier: 9, emoji: '🐲', name: '神龍', power: 3000, price: 190 },
-  { id: 20, tier: 9, emoji: '🦕', name: '恐龍', power: 3500, price: 230 },
+  { id: 19, tier: 9, emoji: '🐲', name: '神龍', power: 230, price: 190 },
+  { id: 20, tier: 9, emoji: '🦕', name: '恐龍', power: 295, price: 230 },
   
   // Tier 10
-  { id: 21, tier: 10, emoji: '👑', name: '王者', power: 10000, price: 350 },
-  { id: 22, tier: 10, emoji: '💎', name: '鑽石', power: 20000, price: 500 },
+  { id: 21, tier: 10, emoji: '👑', name: '王者', power: 750, price: 350 },
+  { id: 22, tier: 10, emoji: '💎', name: '鑽石', power: 999, price: 500 },
 ];
 
 type Language = 'zh' | 'ms' | 'en';
