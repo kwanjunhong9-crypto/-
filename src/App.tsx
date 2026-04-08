@@ -24,7 +24,8 @@ import {
   Pencil,
   Trash2,
   Menu,
-  Languages
+  Languages,
+  Volume2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill } from './types';
@@ -258,6 +259,45 @@ export default function App() {
   const [activeClassId, setActiveClassId] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
   const [myClasses, setMyClasses] = useState<{id: string, name: string}[]>([]);
+  
+  // Timer & Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerEditMode, setTimerEditMode] = useState<'h' | 'm' | 's' | null>(null);
+  const [showTimeUp, setShowTimeUp] = useState(false);
+
+  // Timer Logic
+  const playBellSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1011/1011-preview.mp3');
+    audio.play().catch(e => console.log('Audio play failed:', e));
+    
+    // Play again after 1.5s and 3s for a total of 3 rings
+    setTimeout(() => {
+      const audio2 = new Audio('https://assets.mixkit.co/active_storage/sfx/1011/1011-preview.mp3');
+      audio2.play().catch(e => {});
+    }, 1500);
+    
+    setTimeout(() => {
+      const audio3 = new Audio('https://assets.mixkit.co/active_storage/sfx/1011/1011-preview.mp3');
+      audio3.play().catch(e => {});
+    }, 3000);
+  };
+
+  useEffect(() => {
+    let interval: any;
+    if (isTimerRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isTimerRunning) {
+      setIsTimerRunning(false);
+      setShowTimeUp(true);
+      playBellSound();
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timeLeft]);
 
   const t = TRANSLATIONS[language];
 
@@ -928,12 +968,20 @@ export default function App() {
       {/* Header */}
       <header className="bg-white border-b border-[#E1E4E8] sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#00B894] rounded-xl flex items-center justify-center shadow-lg shadow-[#00B894]/20">
-              <Users className="text-white w-6 h-6" />
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold tracking-tight">{className || t.myClasses}</h1>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors text-[#636E72]"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-[#00B894] rounded-xl flex items-center justify-center shadow-lg shadow-[#00B894]/20">
+                <Users className="text-white w-6 h-6" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold tracking-tight">{className || t.myClasses}</h1>
+              </div>
             </div>
           </div>
           
@@ -1779,6 +1827,167 @@ export default function App() {
           </button>
         </div>
       </footer>
+
+      {/* Sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+            />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-[70] p-6 flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-black text-[#2D3436]">工具箱</h2>
+                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-[#F1F3F5] rounded-lg">
+                  <X className="w-5 h-5 text-[#636E72]" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <button 
+                  onClick={() => {
+                    setIsTimerModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Clock className="w-6 h-6 text-[#00B894]" />
+                  </div>
+                  <span className="font-bold text-[#2D3436]">倒計時</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Timer Modal */}
+      <AnimatePresence>
+        {isTimerModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center z-[80] p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsTimerModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-[40px] p-10 shadow-2xl max-w-sm w-full text-center"
+            >
+              <button 
+                onClick={() => setIsTimerModalOpen(false)}
+                className="absolute top-6 right-6 p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+              >
+                <X className="w-6 h-6 text-[#636E72]" />
+              </button>
+
+              <div className="w-20 h-20 bg-[#00B894]/10 rounded-[30px] flex items-center justify-center mx-auto mb-8">
+                <Clock className="w-10 h-10 text-[#00B894]" />
+              </div>
+
+              <h2 className="text-2xl font-black text-[#2D3436] mb-8">倒計時</h2>
+
+              {showTimeUp && (
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mb-8 p-4 bg-[#FAB1A0] text-[#D63031] rounded-2xl font-black text-lg shadow-lg shadow-[#FAB1A0]/30 animate-pulse"
+                >
+                  時間到！ 🔔
+                </motion.div>
+              )}
+
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <button 
+                  onClick={playBellSound}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#F1F3F5] text-[#636E72] rounded-xl hover:bg-[#E1E4E8] transition-colors text-xs font-bold"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  測試鈴聲
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 mb-10">
+                {(() => {
+                  const hrs = Math.floor(timeLeft / 3600);
+                  const mins = Math.floor((timeLeft % 3600) / 60);
+                  const secs = timeLeft % 60;
+                  const h = hrs.toString().padStart(2, '0');
+                  const m = mins.toString().padStart(2, '0');
+                  const s = secs.toString().padStart(2, '0');
+
+                  const TimerDigit = ({ value, type }: { value: string, type: 'h' | 'm' | 's' }) => (
+                    <div className="flex flex-col items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          if (isTimerRunning) return;
+                          if (type === 'h') setTimeLeft(prev => prev + 3600);
+                          if (type === 'm') setTimeLeft(prev => prev + 60);
+                          if (type === 's') setTimeLeft(prev => prev + 1);
+                        }}
+                        className="text-5xl font-black text-[#2D3436] hover:text-[#00B894] transition-colors tabular-nums"
+                      >
+                        {value}
+                      </button>
+                      <span className="text-[10px] font-black text-[#B2BEC3] uppercase tracking-widest">
+                        {type === 'h' ? '時' : type === 'm' ? '分' : '秒'}
+                      </span>
+                    </div>
+                  );
+
+                  return (
+                    <>
+                      <TimerDigit value={h} type="h" />
+                      <span className="text-4xl font-black text-[#DFE6E9] mb-6">:</span>
+                      <TimerDigit value={m} type="m" />
+                      <span className="text-4xl font-black text-[#DFE6E9] mb-6">:</span>
+                      <TimerDigit value={s} type="s" />
+                    </>
+                  );
+                })()}
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all shadow-lg ${
+                    isTimerRunning 
+                      ? 'bg-[#FAB1A0] text-[#D63031] shadow-[#FAB1A0]/30' 
+                      : 'bg-[#00B894] text-white shadow-[#00B894]/30 hover:bg-[#00A383]'
+                  }`}
+                >
+                  {isTimerRunning ? '暫停' : '開始'}
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsTimerRunning(false);
+                    setTimeLeft(0);
+                    setShowTimeUp(false);
+                  }}
+                  className="px-6 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                >
+                  重置
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
