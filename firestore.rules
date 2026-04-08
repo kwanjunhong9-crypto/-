@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isClassOwner(classData) {
+      return isAuthenticated() && request.auth.uid == classData.teacherId;
+    }
+
+    function isValidClass(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.teacherId == request.auth.uid &&
+             data.code is string && data.code.size() == 4 &&
+             data.students is list &&
+             data.createdAt is string;
+    }
+
+    match /classes/{classId} {
+      // Allow teacher to read/write their own class
+      // Allow others to read if they know the class code (via query)
+      allow read: if isAuthenticated() && (
+        resource == null || 
+        resource.data.teacherId == request.auth.uid ||
+        (request.query != null && request.query.limit <= 1 && request.query.filters.code != null)
+      );
+      allow create: if isAuthenticated() && isValidClass(request.resource.data);
+      allow update: if isAuthenticated() && isClassOwner(resource.data) && isValidClass(request.resource.data);
+      allow delete: if isAuthenticated() && isClassOwner(resource.data);
+    }
+
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.classId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.classId == request.auth.uid;
+    }
+    
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Class": {
+      "title": "Class",
+      "description": "A classroom managed by a teacher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "code": { "type": "string" },
+        "students": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "points": { "type": "number" },
+              "avatar": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "teacherId", "code", "students", "createdAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A story post in a class.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "author": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "likes": { "type": "number" }
+      },
+      "required": ["id", "classId", "author", "content", "timestamp", "likes"]
+    }
+  },
+  "firestore": {
+    "/classes/{classId}": {
+      "schema": "Class",
+      "description": "Collection of classes."
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Collection of story posts."
+    }
+  }
+}
