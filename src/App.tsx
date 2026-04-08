@@ -114,7 +114,7 @@ type Language = 'zh' | 'ms' | 'en';
 
 const TRANSLATIONS = {
   zh: {
-    myClasses: '我的班級',
+    myClasses: 'MY CLASS(BETA) 1.1',
     newClass: '新班級',
     students: '學生',
     exit: '退出',
@@ -153,7 +153,7 @@ const TRANSLATIONS = {
     comments: '評論'
   },
   ms: {
-    myClasses: 'Kelas Saya',
+    myClasses: 'MY CLASS(BETA) 1.1',
     newClass: 'Kelas Baru',
     students: 'Pelajar',
     exit: 'Keluar',
@@ -192,7 +192,7 @@ const TRANSLATIONS = {
     comments: 'Komen'
   },
   en: {
-    myClasses: 'My Classes',
+    myClasses: 'MY CLASS(BETA) 1.1',
     newClass: 'New Class',
     students: 'Students',
     exit: 'Exit',
