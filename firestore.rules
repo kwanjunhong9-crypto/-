@@ -17,18 +17,15 @@ service cloud.firestore {
     function isValidClass(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.teacherId == request.auth.uid &&
-             data.code is string && data.code.size() == 4 &&
              data.students is list &&
              data.createdAt is string;
     }
 
     match /classes/{classId} {
       // Allow teacher to read/write their own class
-      // Allow others to read if they know the class code (via query)
       allow read: if isAuthenticated() && (
         resource == null || 
-        resource.data.teacherId == request.auth.uid ||
-        (request.query != null && request.query.limit <= 1 && request.query.filters.code != null)
+        resource.data.teacherId == request.auth.uid
       );
       allow create: if isAuthenticated() && isValidClass(request.resource.data);
       allow update: if isAuthenticated() && isClassOwner(resource.data) && isValidClass(request.resource.data);

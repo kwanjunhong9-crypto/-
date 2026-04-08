@@ -8,7 +8,6 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "teacherId": { "type": "string" },
-        "code": { "type": "string" },
         "students": {
           "type": "array",
           "items": {
@@ -23,7 +22,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "name", "teacherId", "code", "students", "createdAt"]
+      "required": ["id", "name", "teacherId", "students", "createdAt"]
     },
     "Post": {
       "title": "Post",

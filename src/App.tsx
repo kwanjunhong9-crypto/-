@@ -149,11 +149,7 @@ const TRANSLATIONS = {
     posting: '發佈中...',
     post: '發佈',
     likes: '讚',
-    comments: '評論',
-    joinClass: '加入班級',
-    enterCode: '輸入4位代碼',
-    classCode: '班級代碼',
-    classNotFound: '找不到該班級，請檢查代碼是否正確'
+    comments: '評論'
   },
   ms: {
     myClasses: 'Kelas Saya',
@@ -192,11 +188,7 @@ const TRANSLATIONS = {
     posting: 'Menghantar...',
     post: 'Hantar',
     likes: 'Suka',
-    comments: 'Komen',
-    joinClass: 'Sertai Kelas',
-    enterCode: 'Masukkan kod 4 digit',
-    classCode: 'Kod Kelas',
-    classNotFound: 'Kelas tidak dijumpai, sila semak kod'
+    comments: 'Komen'
   },
   en: {
     myClasses: 'My Classes',
@@ -235,11 +227,7 @@ const TRANSLATIONS = {
     posting: 'Posting...',
     post: 'Post',
     likes: 'Likes',
-    comments: 'Comments',
-    joinClass: 'Join Class',
-    enterCode: 'Enter 4-digit code',
-    classCode: 'Class Code',
-    classNotFound: 'Class not found, please check the code'
+    comments: 'Comments'
   }
 };
 
@@ -267,12 +255,9 @@ export default function App() {
   const [coinsModalStudent, setCoinsModalStudent] = useState<Student | null>(null);
   const [powerModalMode, setPowerModalMode] = useState<'pet' | 'avatar'>('pet');
   const [selectedPetTier, setSelectedPetTier] = useState<number>(1);
-  const [classCode, setClassCode] = useState('');
-  const [searchCode, setSearchCode] = useState('');
   const [activeClassId, setActiveClassId] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
-  const [myClasses, setMyClasses] = useState<{id: string, name: string, code: string}[]>([]);
-  const [joinedClassInfo, setJoinedClassInfo] = useState<{id: string, name: string, code: string} | null>(null);
+  const [myClasses, setMyClasses] = useState<{id: string, name: string}[]>([]);
 
   const t = TRANSLATIONS[language];
 
@@ -299,20 +284,12 @@ export default function App() {
       // Fetch all classes owned by this teacher
       const q = query(collection(db, 'classes'), where('teacherId', '==', user.uid));
       const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-        const classes: {id: string, name: string, code: string}[] = [];
+        const classes: {id: string, name: string}[] = [];
         for (const classDoc of querySnapshot.docs) {
           const data = classDoc.data();
-          let code = data.code;
-          if (!code) {
-            code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            await updateDoc(doc(db, 'classes', classDoc.id), { code: code });
-          }
-          classes.push({ id: classDoc.id, name: data.name, code: code });
+          classes.push({ id: classDoc.id, name: data.name });
         }
         setMyClasses(classes);
-        
-        // If we don't have an active class yet, or the active class is one of ours, 
-        // we can set the first one as default if needed, but usually we stay on landing.
       });
       
       setView('landing');
@@ -338,7 +315,6 @@ export default function App() {
           const data = docSnap.data();
           setClassName(data.name);
           setStudents(data.students || []);
-          setClassCode(data.code || '');
           setIsTeacher(user?.uid === data.teacherId);
         }
       });
@@ -505,17 +481,14 @@ export default function App() {
 
     if (user) {
       try {
-        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
         const newClassRef = doc(collection(db, 'classes'));
         await setDoc(newClassRef, {
           id: newClassRef.id,
           name: className,
           teacherId: user.uid,
-          code: code,
           students: [],
           createdAt: new Date().toISOString()
         });
-        setClassCode(code);
         setActiveClassId(newClassRef.id);
         setIsTeacher(true);
         setView('app');
@@ -525,32 +498,6 @@ export default function App() {
     } else {
       setIsGuest(true);
       setView('app');
-    }
-  };
-
-  const handleJoinClass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchCode.trim() || searchCode.length !== 4) return;
-    
-    try {
-      const q = query(collection(db, 'classes'), where('code', '==', searchCode.toUpperCase()));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const classDoc = querySnapshot.docs[0];
-        const data = classDoc.data();
-        const info = { id: classDoc.id, name: data.name, code: data.code };
-        
-        setJoinedClassInfo(info);
-        setActiveClassId(info.id);
-        setSearchCode('');
-        setView('app');
-      } else {
-        alert(t.classNotFound);
-      }
-    } catch (error) {
-      console.error('Failed to join class', error);
-      alert('發生錯誤，請稍後再試');
     }
   };
 
@@ -626,22 +573,6 @@ export default function App() {
       <div className="min-h-screen bg-[#F5F7FA] flex flex-col p-4 relative overflow-hidden">
         {/* Top Right Buttons */}
         <div className="absolute top-8 right-8 z-20 flex items-center gap-3">
-          <form onSubmit={handleJoinClass} className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-[#E1E4E8]">
-            <input 
-              type="text" 
-              placeholder={t.enterCode}
-              value={searchCode}
-              onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
-              maxLength={4}
-              className="w-20 sm:w-32 text-xs sm:text-sm font-bold outline-none bg-transparent"
-            />
-            <button 
-              type="submit"
-              className="p-1 hover:bg-[#F1F3F5] rounded-lg transition-colors text-[#00B894]"
-            >
-              <Plus className="w-4 h-4 sm:w-5 h-5" />
-            </button>
-          </form>
           <div className="hidden sm:block">
             <LanguageSwitcher />
           </div>
@@ -691,39 +622,9 @@ export default function App() {
                       <Globe className="w-10 h-10 text-[#00B894]" />
                     </div>
                     <h3 className="text-lg font-black text-[#2D3436] mb-2">{cls.name}</h3>
-                    <div className="flex items-center gap-2 text-[#00B894] font-bold text-xs bg-[#00B894]/10 px-3 py-1 rounded-full">
-                      <span>{t.classCode}: {cls.code}</span>
-                    </div>
                   </div>
                 </motion.div>
               ))}
-
-              {/* Joined Class */}
-              {joinedClassInfo && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  onClick={() => {
-                    setActiveClassId(joinedClassInfo.id);
-                    setIsTeacher(false);
-                    setHasExited(false);
-                    setView('app');
-                  }}
-                  className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative border border-[#E1E4E8] hover:border-[#6C5CE7]/20"
-                >
-                  <div className="absolute top-6 right-6">
-                    <Lock className="w-5 h-5 text-[#6C5CE7]" />
-                  </div>
-                  
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-20 h-20 bg-[#6C5CE7]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <Users className="w-10 h-10 text-[#6C5CE7]" />
-                    </div>
-                    <h3 className="text-lg font-black text-[#2D3436] mb-2">{joinedClassInfo.name}</h3>
-                    <p className="text-xs font-bold text-[#B2BEC3] uppercase tracking-widest">已加入的班級</p>
-                  </div>
-                </motion.div>
-              )}
 
               {/* Add New Class Button - Always visible for teachers */}
               <motion.div 
@@ -739,31 +640,6 @@ export default function App() {
                   <Plus className="w-8 h-8 text-white" />
                 </div>
                 <span className="font-black text-[#6C5CE7] text-lg">{t.newClass}</span>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all border border-[#E1E4E8] flex flex-col items-center justify-center text-center min-h-[240px]"
-              >
-                <div className="w-16 h-16 bg-[#00B894]/10 rounded-full flex items-center justify-center mb-4">
-                  <Lock className="w-8 h-8 text-[#00B894]" />
-                </div>
-                <p className="font-black text-[#2D3436] mb-4">{t.joinClass}</p>
-                <form onSubmit={handleJoinClass} className="flex items-center gap-2 bg-[#F1F3F5] px-4 py-3 rounded-2xl w-full">
-                  <input 
-                    type="text" 
-                    placeholder={t.enterCode}
-                    value={searchCode}
-                    onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
-                    maxLength={4}
-                    className="w-full text-sm font-bold outline-none bg-transparent text-center tracking-widest"
-                  />
-                  <button type="submit" className="text-[#00B894] p-1 hover:bg-white rounded-lg transition-colors">
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </form>
               </motion.div>
             </div>
           </div>
@@ -799,33 +675,6 @@ export default function App() {
               >
                 {t.start}
               </button>
-
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#E1E4E8]"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#F5F7FA] px-4 font-black text-[#B2BEC3] tracking-widest">OR</span>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-[32px] shadow-sm border border-[#E1E4E8]">
-                <p className="font-black text-[#2D3436] mb-4 text-sm uppercase tracking-widest">{t.joinClass}</p>
-                <form onSubmit={handleJoinClass} className="flex items-center gap-2 bg-[#F1F3F5] px-6 py-4 rounded-2xl w-full">
-                  <Lock className="w-5 h-5 text-[#B2BEC3]" />
-                  <input 
-                    type="text" 
-                    placeholder={t.enterCode}
-                    value={searchCode}
-                    onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
-                    maxLength={4}
-                    className="w-full text-lg font-black outline-none bg-transparent text-center tracking-[0.5em] placeholder:tracking-normal"
-                  />
-                  <button type="submit" className="bg-[#00B894] text-white p-2 rounded-xl shadow-lg shadow-[#00B894]/20 hover:scale-110 transition-transform">
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </form>
-              </div>
               
               <div className="flex flex-col items-center gap-2">
                 <p className="text-xs text-[#B2BEC3] font-bold uppercase tracking-widest">{t.guestMode}</p>
@@ -1085,12 +934,6 @@ export default function App() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold tracking-tight">{className || t.myClasses}</h1>
-              {classCode && (
-                <div className="flex items-center gap-1.5 text-[11px] font-black text-[#00B894] uppercase tracking-widest mt-0.5 bg-[#00B894]/10 px-2 py-0.5 rounded-full w-fit">
-                  <Lock className="w-3 h-3" />
-                  {t.classCode}: <span className="text-[#2D3436]">{classCode}</span>
-                </div>
-              )}
             </div>
           </div>
           
