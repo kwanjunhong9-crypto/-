@@ -25,10 +25,13 @@ import {
   Trash2,
   Menu,
   Languages,
-  Volume2
+  Volume2,
+  CheckCircle2,
+  XCircle,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Student, StoryPost, Skill } from './types';
+import { Student, StoryPost, Skill, Homework } from './types';
 import { SKILLS, INITIAL_STUDENTS, NEEDS_WORK_SKILLS } from './constants';
 import { auth, db } from './firebase';
 import { 
@@ -150,7 +153,40 @@ const TRANSLATIONS = {
     posting: '發佈中...',
     post: '發佈',
     likes: '讚',
-    comments: '評論'
+    comments: '評論',
+    homework: '功課',
+    homeworkTitle: '班級功課',
+    addHomework: '添加功課',
+    question: '題目',
+    answer: '答案',
+    coins: '金幣',
+    exp: '經驗值',
+    submit: '提交',
+    correct: '回答正確！',
+    wrong: '回答錯誤，再試一次！',
+    reward: '獎勵',
+    noHomework: '目前沒有功課',
+    editHomework: '修改功課',
+    deleteHomework: '刪除功課',
+    image: '圖片',
+    imageUrl: '圖片網址',
+    enterAnswer: '請輸入答案',
+    teacherAnswer: '老師設定的答案',
+    studentPassword: '學生密碼',
+    enterPassword: '請輸入6位數密碼',
+    loginAsStudent: '學生登入',
+    passwordError: '密碼錯誤',
+    setStudentPassword: '設定學生密碼',
+    passwordPlaceholder: '6位數字',
+    onlyOwnProfile: '你只能查看自己的個人資料',
+    teacherOnly: '只有老師可以執行此操作',
+    expiryTime: '截止時間',
+    oneDay: '1 天',
+    twoDays: '2 天',
+    threeDays: '3 天',
+    oneWeek: '1 週',
+    expiresIn: '剩餘時間',
+    expired: '已截止'
   },
   ms: {
     myClasses: 'Kelas Saya',
@@ -189,7 +225,33 @@ const TRANSLATIONS = {
     posting: 'Menghantar...',
     post: 'Hantar',
     likes: 'Suka',
-    comments: 'Komen'
+    comments: 'Komen',
+    homework: 'Kerja Rumah',
+    homeworkTitle: 'Kerja Rumah Kelas',
+    addHomework: 'Tambah Kerja Rumah',
+    question: 'Soalan',
+    answer: 'Jawapan',
+    coins: 'Syiling',
+    exp: 'EXP',
+    submit: 'Hantar',
+    correct: 'Jawapan Betul!',
+    wrong: 'Jawapan Salah, cuba lagi!',
+    reward: 'Ganjaran',
+    noHomework: 'Tiada kerja rumah buat masa ini',
+    editHomework: 'Edit Kerja Rumah',
+    deleteHomework: 'Padam Kerja Rumah',
+    image: 'Imej',
+    imageUrl: 'URL Imej',
+    enterAnswer: 'Sila masukkan jawapan',
+    teacherAnswer: 'Jawapan Guru',
+    studentPassword: 'Kata Laluan Pelajar',
+    enterPassword: 'Sila masukkan 6 digit kata laluan',
+    loginAsStudent: 'Log Masuk Pelajar',
+    passwordError: 'Kata laluan salah',
+    setStudentPassword: 'Tetapkan Kata Laluan Pelajar',
+    passwordPlaceholder: '6 digit',
+    onlyOwnProfile: 'Anda hanya boleh melihat profil sendiri',
+    teacherOnly: 'Hanya guru boleh melakukan tindakan ini'
   },
   en: {
     myClasses: 'My Classes',
@@ -228,7 +290,40 @@ const TRANSLATIONS = {
     posting: 'Posting...',
     post: 'Post',
     likes: 'Likes',
-    comments: 'Comments'
+    comments: 'Comments',
+    homework: 'Homework',
+    homeworkTitle: 'Class Homework',
+    addHomework: 'Add Homework',
+    question: 'Question',
+    answer: 'Answer',
+    coins: 'Coins',
+    exp: 'EXP',
+    submit: 'Submit',
+    correct: 'Correct Answer!',
+    wrong: 'Wrong Answer, try again!',
+    reward: 'Reward',
+    noHomework: 'No homework at the moment',
+    editHomework: 'Edit Homework',
+    deleteHomework: 'Delete Homework',
+    image: 'Image',
+    imageUrl: 'Image URL',
+    enterAnswer: 'Please enter answer',
+    teacherAnswer: 'Teacher\'s Answer',
+    studentPassword: 'Student Password',
+    enterPassword: 'Please enter 6-digit password',
+    loginAsStudent: 'Student Login',
+    passwordError: 'Incorrect password',
+    setStudentPassword: 'Set Student Password',
+    passwordPlaceholder: '6 digits',
+    onlyOwnProfile: 'You can only view your own profile',
+    teacherOnly: 'Only teachers can perform this action',
+    expiryTime: 'Expiry Time',
+    oneDay: '1 Day',
+    twoDays: '2 Days',
+    threeDays: '3 Days',
+    oneWeek: '1 Week',
+    expiresIn: 'Expires in',
+    expired: 'Expired'
   }
 };
 
@@ -260,6 +355,28 @@ export default function App() {
   const [isTeacher, setIsTeacher] = useState(false);
   const [myClasses, setMyClasses] = useState<{id: string, name: string}[]>([]);
   
+  // Homework State
+  const [homeworks, setHomeworks] = useState<Homework[]>([]);
+  const [isHomeworkModalOpen, setIsHomeworkModalOpen] = useState(false);
+  const [isAddingHomework, setIsAddingHomework] = useState(false);
+  const [newHomework, setNewHomework] = useState<Partial<Homework>>({
+    question: '',
+    answer: '',
+    coinsReward: 10,
+    expReward: 10,
+    imageUrl: '',
+    expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+  });
+  const [studentAnswers, setStudentAnswers] = useState<{[key: string]: string}>({});
+  const [homeworkFeedback, setHomeworkFeedback] = useState<{[key: string]: {type: 'success' | 'error', message: string} | null}>({});
+
+  // Student Login State
+  const [loggedInStudentId, setLoggedInStudentId] = useState<string | null>(null);
+  const [studentLoginPassword, setStudentLoginPassword] = useState('');
+  const [isStudentPasswordModalOpen, setIsStudentPasswordModalOpen] = useState(false);
+  const [passwordModalStudent, setPasswordModalStudent] = useState<Student | null>(null);
+  const [tempStudentPassword, setTempStudentPassword] = useState('');
+
   // Timer & Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
@@ -355,7 +472,8 @@ export default function App() {
           const data = docSnap.data();
           setClassName(data.name);
           setStudents(data.students || []);
-          setIsTeacher(user?.uid === data.teacherId);
+          // Only set as teacher if not logged in as a student
+          setIsTeacher(user?.uid === data.teacherId && !loggedInStudentId);
         }
       });
 
@@ -376,7 +494,47 @@ export default function App() {
         unsubscribePosts();
       };
     }
-  }, [activeClassId, user]);
+  }, [activeClassId, user, loggedInStudentId]);
+
+  // Homework Sync
+  useEffect(() => {
+    if (activeClassId) {
+      const hwQuery = query(collection(db, 'homeworks'), where('classId', '==', activeClassId));
+      const unsubscribeHw = onSnapshot(hwQuery, (querySnapshot) => {
+        const fetchedHw: Homework[] = [];
+        querySnapshot.forEach((doc) => {
+          fetchedHw.push({ id: doc.id, ...doc.data() } as Homework);
+        });
+        setHomeworks(fetchedHw);
+      });
+      return () => unsubscribeHw();
+    }
+  }, [activeClassId]);
+
+  // Sync passwords to global collection for universal login
+  useEffect(() => {
+    if (isTeacher && activeClassId && students.length > 0 && !loggedInStudentId) {
+      const syncPasswords = async () => {
+        try {
+          for (const student of students) {
+            if (student.password) {
+              const passwordDocRef = doc(db, 'studentPasswords', student.password);
+              const passwordDocSnap = await getDoc(passwordDocRef);
+              if (!passwordDocSnap.exists()) {
+                await setDoc(passwordDocRef, {
+                  classId: activeClassId,
+                  studentId: student.id
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Failed to sync passwords to global collection", e);
+        }
+      };
+      syncPasswords();
+    }
+  }, [isTeacher, activeClassId, students, loggedInStudentId]);
 
   // LocalStorage Sync for Guests
   useEffect(() => {
@@ -415,6 +573,67 @@ export default function App() {
       localStorage.setItem('dojo_class_name', className);
     }
   }, [className, isGuest]);
+
+  const playSound = (type: 'success' | 'error' | 'power') => {
+    // Use more distinct sounds
+    const successUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'; // High pitch ding
+    const errorUrl = 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3'; // Low pitch buzz/thud
+    const powerUrl = 'https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3'; // Level up sound
+    
+    let url = successUrl;
+    if (type === 'error') url = errorUrl;
+    if (type === 'power') url = powerUrl;
+
+    const audio = new Audio(url);
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log('Audio play failed:', e));
+  };
+
+  const handleStudentLogin = async (password: string) => {
+    if (password.length !== 6) return;
+    
+    try {
+      // Direct lookup using the new collection
+      const passwordDocRef = doc(db, 'studentPasswords', password);
+      const passwordDocSnap = await getDoc(passwordDocRef);
+
+      if (passwordDocSnap.exists()) {
+        const { classId, studentId } = passwordDocSnap.data();
+        
+        // Fetch the class to get student details
+        const classRef = doc(db, 'classes', classId);
+        const classSnap = await getDoc(classRef);
+        
+        if (classSnap.exists()) {
+          const classData = classSnap.data();
+          const student = (classData.students || []).find((s: any) => s.id === studentId);
+          
+          if (student) {
+            setActiveClassId(classId);
+            setLoggedInStudentId(studentId);
+            setIsTeacher(false);
+            setSelectedStudent(student);
+            setStudentLoginPassword('');
+            setIsSidebarOpen(false);
+            playSound('success');
+            setView('app');
+            return;
+          }
+        }
+      }
+      
+      playSound('error');
+      alert('密碼錯誤或找不到該學生。');
+    } catch (error) {
+      console.error("Error during student login:", error);
+      alert("登入時出錯，請稍後再試。");
+    }
+  };
+
+  const handleStudentLogout = () => {
+    setLoggedInStudentId(null);
+    playSound('error');
+  };
 
   const handleGoogleLogin = async () => {
     setLoginError(null);
@@ -634,8 +853,53 @@ export default function App() {
           </button>
         </div>
 
+        {/* Student Login Section - Prominent at the top */}
+        <div className="max-w-md w-full mx-auto z-20 mt-12 mb-8">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8 bg-white rounded-[40px] border-4 border-[#00B894] shadow-2xl shadow-[#00B894]/10"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center">
+                <Lock className="text-[#00B894] w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-[#2D3436]">{t.loginAsStudent}</h2>
+                <p className="text-xs text-[#636E72] font-bold uppercase tracking-widest">輸入 6 位數字密碼</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <input 
+                  type="password"
+                  maxLength={6}
+                  value={studentLoginPassword}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setStudentLoginPassword(val);
+                  }}
+                  placeholder={t.passwordPlaceholder}
+                  className="w-full bg-[#F8F9FA] border-2 border-[#E1E4E8] rounded-2xl px-6 py-5 font-black text-center tracking-[0.8em] outline-none focus:border-[#00B894] transition-all text-2xl"
+                />
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#B2BEC3] pointer-events-none">
+                  <LogIn className="w-full h-full" />
+                </div>
+              </div>
+              <button
+                onClick={() => handleStudentLogin(studentLoginPassword)}
+                disabled={studentLoginPassword.length !== 6}
+                className="bg-[#0984E3] text-white px-8 rounded-2xl font-black text-xl hover:bg-[#0773C5] transition-all shadow-lg shadow-[#0984E3]/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              >
+                進入
+              </button>
+            </div>
+          </motion.div>
+        </div>
+
         {user ? (
-          <div className="max-w-5xl w-full mx-auto mt-20 z-10">
+          <div className="max-w-5xl w-full mx-auto z-10">
             <h2 className="text-2xl font-black text-[#2D3436] mb-8">{t.myClasses}</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -778,19 +1042,17 @@ export default function App() {
     );
   }
 
-  const playSound = (type: 'success' | 'error' | 'power') => {
-    // Use more distinct sounds
-    const successUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'; // High pitch ding
-    const errorUrl = 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3'; // Low pitch buzz/thud
-    const powerUrl = 'https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3'; // Level up sound
-    
-    let url = successUrl;
-    if (type === 'error') url = errorUrl;
-    if (type === 'power') url = powerUrl;
-
-    const audio = new Audio(url);
-    audio.volume = 0.5;
-    audio.play().catch(e => console.log('Audio play failed:', e));
+  const handleUpdateAvatar = (studentId: string, avatarUrl: string) => {
+    const newStudents = students.map(s => {
+      if (s.id === studentId) {
+        return { ...s, avatar: avatarUrl };
+      }
+      return s;
+    });
+    setStudents(newStudents);
+    syncStudentsToFirestore(newStudents);
+    playSound('success');
+    setPowerModalStudent(null);
   };
 
   const handleSelectPet = (studentId: string, petId: number) => {
@@ -903,6 +1165,7 @@ export default function App() {
         name: newStudentName.trim(),
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newStudentName.trim()}`,
         points: 0,
+        exp: 0,
         ownedPets: [],
         equippedPet: null,
         coins: 0,
@@ -934,8 +1197,67 @@ export default function App() {
     setEditingStudent(null);
   };
 
+  const handleSetStudentPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordModalStudent || tempStudentPassword.length !== 6) return;
+
+    try {
+      // Check for uniqueness using the new collection
+      const passwordDocRef = doc(db, 'studentPasswords', tempStudentPassword);
+      const passwordDocSnap = await getDoc(passwordDocRef);
+      
+      if (passwordDocSnap.exists()) {
+        const data = passwordDocSnap.data();
+        // If it's not the same student, it's taken
+        if (data.studentId !== passwordModalStudent.id || data.classId !== activeClassId) {
+          alert('此密碼已經有人使用過了！請更換一個。');
+          playSound('error');
+          return;
+        }
+      }
+
+      // If student had an old password, delete it
+      if (passwordModalStudent.password && passwordModalStudent.password !== tempStudentPassword) {
+        try {
+          await deleteDoc(doc(db, 'studentPasswords', passwordModalStudent.password));
+        } catch (e) {
+          console.error("Failed to delete old password mapping", e);
+        }
+      }
+
+      // Save new mapping
+      await setDoc(passwordDocRef, {
+        classId: activeClassId,
+        studentId: passwordModalStudent.id
+      });
+
+      const updatedStudents = students.map(s => 
+        s.id === passwordModalStudent.id ? { ...s, password: tempStudentPassword } : s
+      );
+      
+      setStudents(updatedStudents);
+      await syncStudentsToFirestore(updatedStudents);
+      setIsStudentPasswordModalOpen(false);
+      setPasswordModalStudent(null);
+      setTempStudentPassword('');
+      playSound('success');
+    } catch (error) {
+      console.error("Error setting student password:", error);
+      alert("設定密碼時出錯，請稍後再試。");
+    }
+  };
+
   const handleDeleteStudent = async (studentId: string) => {
     if (!window.confirm('確定要刪除這位學生嗎？此操作無法撤銷。')) return;
+
+    const student = students.find(s => s.id === studentId);
+    if (student?.password) {
+      try {
+        await deleteDoc(doc(db, 'studentPasswords', student.password));
+      } catch (e) {
+        console.error("Failed to delete student password mapping", e);
+      }
+    }
 
     const updatedStudents = students.filter(s => s.id !== studentId);
     setStudents(updatedStudents);
@@ -996,36 +1318,40 @@ export default function App() {
             >
               {t.classroom}
             </button>
-            <button 
-              onClick={() => setActiveTab('story')}
-              className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'story' 
-                  ? 'bg-white text-[#00B894] shadow-sm' 
-                  : 'text-[#636E72] hover:text-[#2D3436]'
-              }`}
-            >
-              {t.story}
-            </button>
-            <button 
-              onClick={() => setActiveTab('reports')}
-              className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'reports' 
-                  ? 'bg-white text-[#00B894] shadow-sm' 
-                  : 'text-[#636E72] hover:text-[#2D3436]'
-              }`}
-            >
-              {t.reports}
-            </button>
-            <button 
-              onClick={() => setActiveTab('leaderboard')}
-              className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'leaderboard' 
-                  ? 'bg-white text-[#00B894] shadow-sm' 
-                  : 'text-[#636E72] hover:text-[#2D3436]'
-              }`}
-            >
-              {t.leaderboard}
-            </button>
+            {(!loggedInStudentId || isTeacher) && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('story')}
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                    activeTab === 'story' 
+                      ? 'bg-white text-[#00B894] shadow-sm' 
+                      : 'text-[#636E72] hover:text-[#2D3436]'
+                  }`}
+                >
+                  {t.story}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('reports')}
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                    activeTab === 'reports' 
+                      ? 'bg-white text-[#00B894] shadow-sm' 
+                      : 'text-[#636E72] hover:text-[#2D3436]'
+                  }`}
+                >
+                  {t.reports}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('leaderboard')}
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                    activeTab === 'leaderboard' 
+                      ? 'bg-white text-[#00B894] shadow-sm' 
+                      : 'text-[#636E72] hover:text-[#2D3436]'
+                  }`}
+                >
+                  {t.leaderboard}
+                </button>
+              </>
+            )}
           </nav>
 
           <div className="flex items-center gap-4">
@@ -1034,14 +1360,16 @@ export default function App() {
               <p className="text-sm font-bold">{user ? user.displayName : '史密斯老師'}</p>
               <p className="text-xs text-[#636E72]">{user ? '認證教師' : '遊客教師'}</p>
             </div>
-            <button 
-              onClick={handleExit}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DFE6E9] hover:bg-[#D63031]/10 group transition-colors"
-              title="退出並返回首頁"
-            >
-              <LogOut className="w-5 h-5 text-[#636E72] group-hover:text-[#D63031]" />
-              <span className="font-bold text-[#636E72] group-hover:text-[#D63031] hidden sm:inline">{t.exit}</span>
-            </button>
+            {(!loggedInStudentId || isTeacher) && (
+              <button 
+                onClick={handleExit}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DFE6E9] hover:bg-[#D63031]/10 group transition-colors"
+                title="退出並返回首頁"
+              >
+                <LogOut className="w-5 h-5 text-[#636E72] group-hover:text-[#D63031]" />
+                <span className="font-bold text-[#636E72] group-hover:text-[#D63031] hidden sm:inline">{t.exit}</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -1054,7 +1382,7 @@ export default function App() {
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           >
             {/* Add Student Card - Square */}
-            {isTeacher && (
+            {isTeacher && !loggedInStudentId && (
               <button 
                 onClick={() => setIsAddingStudent(true)}
                 className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group shadow-sm"
@@ -1066,8 +1394,24 @@ export default function App() {
               </button>
             )}
 
+            {/* Student Password Button */}
+            {isTeacher && !loggedInStudentId && (
+              <button 
+                onClick={() => setIsStudentPasswordModalOpen(true)}
+                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-[#6C5CE7] hover:bg-[#F5F3FF] transition-all group shadow-sm"
+              >
+                <div className="w-12 h-12 bg-[#F1F3F5] rounded-2xl flex items-center justify-center group-hover:bg-[#6C5CE7] transition-colors">
+                  <Lock className="w-6 h-6 text-[#636E72] group-hover:text-white" />
+                </div>
+                <span className="text-sm font-black text-[#636E72] group-hover:text-[#6C5CE7]">{t.studentPassword}</span>
+              </button>
+            )}
+
             {students.map((student) => {
               const level = Math.floor(student.points / 10);
+              const isSelf = loggedInStudentId === student.id;
+              const canClick = loggedInStudentId ? isSelf : isTeacher;
+              
               let borderColor = 'border-[#E1E4E8]';
               let hoverBorderColor = 'hover:border-[#00B894]/30';
               
@@ -1089,11 +1433,24 @@ export default function App() {
                 <motion.div
                   key={student.id}
                   layoutId={student.id}
-                  whileHover={{ y: -5 }}
-                  className={`bg-white rounded-[2.5rem] p-4 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor}`}
+                  whileHover={canClick ? { y: -5 } : {}}
+                  onClick={() => {
+                    if (canClick) {
+                      if (isTeacher) {
+                        setSelectedStudent(student);
+                      } else if (isSelf) {
+                        // Students can view their own profile but not award points
+                        setSelectedStudent(student);
+                      }
+                    } else if (loggedInStudentId) {
+                      // Show feedback that they can't click others
+                      alert(t.onlyOwnProfile);
+                    }
+                  }}
+                  className={`bg-white rounded-[2.5rem] p-4 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
                 >
                 {/* Edit Button */}
-                {isTeacher && (
+                {isTeacher && !loggedInStudentId && (
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1107,12 +1464,13 @@ export default function App() {
 
                 {/* Avatar Area - Rounded Square Box */}
                 <div 
-                  onClick={() => {
-                    if (!isTeacher) return;
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!(isTeacher && !loggedInStudentId) && !isSelf) return;
                     setPowerModalMode('avatar');
                     setPowerModalStudent(student);
                   }}
-                  className={`w-full aspect-square bg-[#F1F3F5] rounded-[2rem] flex items-center justify-center overflow-hidden relative ${isTeacher ? 'cursor-pointer group/avatar' : ''}`}
+                  className={`w-full aspect-square bg-[#F1F3F5] rounded-[2rem] flex items-center justify-center overflow-hidden relative ${((isTeacher && !loggedInStudentId) || isSelf) ? 'cursor-pointer group/avatar' : ''}`}
                 >
                   {student.equippedPet !== null ? (
                     <span className="text-5xl animate-bounce-slow">
@@ -1126,7 +1484,7 @@ export default function App() {
                       referrerPolicy="no-referrer"
                     />
                   )}
-                  {isTeacher && (
+                  {((isTeacher && !loggedInStudentId) || isSelf) && (
                     <div className="absolute inset-0 bg-black/0 group-hover/avatar:bg-black/5 transition-colors flex items-center justify-center">
                       <Zap className="w-6 h-6 text-white opacity-0 group-hover/avatar:opacity-100 transition-opacity drop-shadow-md" />
                     </div>
@@ -1141,7 +1499,14 @@ export default function App() {
                 <div className="w-full space-y-2">
                   {/* Points Pill - Moved Above Level */}
                   <button 
-                    onClick={() => isTeacher && setSelectedStudent(student)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isTeacher) {
+                        setSelectedStudent(student);
+                      } else if (isSelf) {
+                        setSelectedStudent(student);
+                      }
+                    }}
                     className="w-full py-1.5 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-2 hover:bg-[#E1E4E8] transition-colors"
                   >
                     <Star className="w-3.5 h-3.5 text-[#F1C40F] fill-current" />
@@ -1162,11 +1527,11 @@ export default function App() {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isTeacher) return;
+                      if (!(isTeacher && !loggedInStudentId) && !isSelf) return;
                       setPowerModalMode('pet');
                       setPowerModalStudent(student);
                     }}
-                    className="w-full py-1.5 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-2 hover:bg-[#E1E4E8] transition-colors"
+                    className={`w-full py-1.5 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-2 border border-[#E1E4E8]/50 transition-colors ${((isTeacher && !loggedInStudentId) || isSelf) ? 'hover:bg-[#E1E4E8]' : ''}`}
                   >
                     <Zap className="w-3.5 h-3.5 text-[#6C5CE7] fill-current" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#636E72]">
@@ -1193,15 +1558,15 @@ export default function App() {
                 {/* Progress Bar (Experience) */}
                 <div className="w-full px-2 mt-2">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">EXP: {student.points * 10}</span>
+                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">EXP: {student.exp || 0}</span>
                     <span className="text-[9px] font-black text-[#00B894] bg-[#00B894]/10 px-1.5 rounded-md">
-                      階段 {Math.floor(student.points / 30)}
+                      階段 {Math.floor((student.exp || 0) / 100)}
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-[#F1F3F5] rounded-full overflow-hidden border border-[#E1E4E8]/30">
                     <div 
                       className="h-full bg-[#00B894] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(0,184,148,0.4)]" 
-                      style={{ width: `${((student.points % 30) / 30) * 100}%` }}
+                      style={{ width: `${(((student.exp || 0) % 100) / 100) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -1451,105 +1816,164 @@ export default function App() {
                   )}
                 </div>
                 <h2 className="text-2xl font-bold">
-                  {powerModalMode === 'pet' ? '你的寵物' : '你的寵物頭像'}
+                  {powerModalMode === 'pet' ? '你的寵物' : '更換頭像'}
                 </h2>
-                <p className="text-[#636E72] mt-1">為 {powerModalStudent.name} 選擇一個寵物頭像</p>
-                <div className="mt-4 inline-flex items-center gap-2 bg-[#F1C40F]/10 px-4 py-2 rounded-2xl border border-[#F1C40F]/20">
-                  <Coins className="w-4 h-4 text-[#F1C40F] fill-current" />
-                  <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} 金幣</span>
+                <p className="text-[#636E72] mt-1">
+                  {powerModalMode === 'pet' ? `為 ${powerModalStudent.name} 選擇一個寵物` : `為 ${powerModalStudent.name} 選擇一個新頭像`}
+                </p>
+                {powerModalMode === 'pet' && (
+                  <div className="mt-4 inline-flex items-center gap-2 bg-[#F1C40F]/10 px-4 py-2 rounded-2xl border border-[#F1C40F]/20">
+                    <Coins className="w-4 h-4 text-[#F1C40F] fill-current" />
+                    <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} 金幣</span>
+                  </div>
+                )}
+              </div>
+              
+              {powerModalMode === 'avatar' && (
+                <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] flex gap-4 justify-center">
+                  <button 
+                    onClick={() => setPowerModalMode('avatar')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'avatar' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
+                  >
+                    基礎頭像
+                  </button>
+                  <button 
+                    onClick={() => setPowerModalMode('pet')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'pet' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
+                  >
+                    寵物頭像
+                  </button>
                 </div>
-              </div>
-              
-              <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] overflow-x-auto whitespace-nowrap flex gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tier => {
-                  const currentStage = Math.floor(powerModalStudent.points / 30);
-                  const isLocked = tier > 1 && currentStage < tier;
-                  
-                  return (
-                    <button
-                      key={tier}
-                      disabled={isLocked}
-                      onClick={() => setSelectedPetTier(tier)}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
-                        selectedPetTier === tier 
-                          ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
-                          : isLocked
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                            : 'bg-white text-[#636E72] border border-[#E1E4E8] hover:border-[#6C5CE7]/30'
-                      }`}
-                    >
-                      {isLocked && <Lock className="w-3 h-3" />}
-                      等級 {tier}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              <div className="p-8 grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
-                {(() => {
-                  const currentStage = Math.floor(powerModalStudent.points / 30);
-                  const isTierLocked = selectedPetTier > 1 && currentStage < selectedPetTier;
-                  
-                  if (isTierLocked) {
-                    return (
-                      <div className="col-span-2 py-12 flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
-                          <Lock className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900">等級 {selectedPetTier} 已鎖定</h3>
-                        <p className="text-sm text-gray-500 mt-2 max-w-[200px]">
-                          你需要達到 <span className="font-black text-[#6C5CE7]">階段 {selectedPetTier}</span> 才能解鎖此等級的寵物。
-                          <br />
-                          <span className="text-[10px] mt-1 block">(目前階段: {currentStage})</span>
-                        </p>
-                      </div>
-                    );
-                  }
+              )}
 
-                  return PETS.filter(p => p.tier === selectedPetTier).sort((a, b) => a.price - b.price).map(pet => {
-                    const isOwned = (powerModalStudent.ownedPets || []).includes(pet.id);
-                    const isEquipped = powerModalStudent.equippedPet === pet.id;
-                    const canAfford = (powerModalStudent.coins || 0) >= pet.price;
-                    
-                    return (
-                      <button
-                        key={pet.id}
-                        disabled={!isOwned && !canAfford}
-                        onClick={() => handleSelectPet(powerModalStudent.id, pet.id)}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all relative group ${
-                          isEquipped 
-                            ? 'bg-[#F1F3F5] ring-2 ring-[#6C5CE7]' 
-                            : !isOwned && !canAfford 
-                              ? 'opacity-50 grayscale cursor-not-allowed bg-gray-50' 
-                              : 'hover:bg-[#F1F3F5]'
-                        }`}
-                      >
-                        {!isOwned && !canAfford && (
-                          <div className="absolute top-2 right-2">
-                            <Lock className="w-3 h-3 text-[#636E72]" />
+              {powerModalMode === 'pet' ? (
+                <>
+                  <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] overflow-x-auto whitespace-nowrap flex gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tier => {
+                      const currentStage = Math.floor(powerModalStudent.points / 30);
+                      const isLocked = tier > 1 && currentStage < tier;
+                      
+                      return (
+                        <button
+                          key={tier}
+                          disabled={isLocked}
+                          onClick={() => setSelectedPetTier(tier)}
+                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                            selectedPetTier === tier 
+                              ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
+                              : isLocked
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                : 'bg-white text-[#636E72] border border-[#E1E4E8] hover:border-[#6C5CE7]/30'
+                          }`}
+                        >
+                          {isLocked && <Lock className="w-3 h-3" />}
+                          等級 {tier}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="p-8 grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
+                    {(() => {
+                      const currentStage = Math.floor(powerModalStudent.points / 30);
+                      const isTierLocked = selectedPetTier > 1 && currentStage < selectedPetTier;
+                      
+                      if (isTierLocked) {
+                        return (
+                          <div className="col-span-2 py-12 flex flex-col items-center justify-center text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
+                              <Lock className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">等級 {selectedPetTier} 已鎖定</h3>
+                            <p className="text-sm text-gray-500 mt-2 max-w-[200px]">
+                              你需要達到 <span className="font-black text-[#6C5CE7]">階段 {selectedPetTier}</span> 才能解鎖此等級的寵物。
+                              <br />
+                              <span className="text-[10px] mt-1 block">(目前階段: {currentStage})</span>
+                            </p>
                           </div>
-                        )}
-                        <span className="text-4xl group-hover:scale-110 transition-transform">{pet.emoji}</span>
-                        <span className="text-sm font-bold">{pet.name}</span>
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="text-[10px] font-black text-[#6C5CE7] bg-[#6C5CE7]/10 px-2 py-0.5 rounded-full">
-                            {pet.power} 能量
-                          </span>
-                          <span className={`text-[10px] font-black flex items-center gap-1 ${isEquipped ? 'text-[#00B894]' : isOwned ? 'text-[#0984E3]' : 'text-[#F39C12]'}`}>
-                            {isEquipped ? '使用中' : isOwned ? '已擁有' : `${pet.price} 金幣`}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  });
-                })()}
-                <button
-                  onClick={() => handleSelectPet(powerModalStudent.id, 0)}
-                  className="col-span-2 mt-2 py-3 rounded-xl text-sm font-bold text-[#D63031] hover:bg-[#FFF5F5] transition-colors"
-                >
-                  移除頭像
-                </button>
-              </div>
+                        );
+                      }
+
+                      return PETS.filter(p => p.tier === selectedPetTier).sort((a, b) => a.price - b.price).map(pet => {
+                        const isOwned = (powerModalStudent.ownedPets || []).includes(pet.id);
+                        const isEquipped = powerModalStudent.equippedPet === pet.id;
+                        const canAfford = (powerModalStudent.coins || 0) >= pet.price;
+                        
+                        return (
+                          <button
+                            key={pet.id}
+                            disabled={!isOwned && !canAfford}
+                            onClick={() => handleSelectPet(powerModalStudent.id, pet.id)}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all relative group ${
+                              isEquipped 
+                                ? 'bg-[#F1F3F5] ring-2 ring-[#6C5CE7]' 
+                                : !isOwned && !canAfford 
+                                  ? 'opacity-50 grayscale cursor-not-allowed bg-gray-50' 
+                                  : 'hover:bg-[#F1F3F5]'
+                            }`}
+                          >
+                            {!isOwned && !canAfford && (
+                              <div className="absolute top-2 right-2">
+                                <Lock className="w-3 h-3 text-[#636E72]" />
+                              </div>
+                            )}
+                            <span className="text-4xl group-hover:scale-110 transition-transform">{pet.emoji}</span>
+                            <span className="text-sm font-bold">{pet.name}</span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-[10px] font-black text-[#6C5CE7] bg-[#6C5CE7]/10 px-2 py-0.5 rounded-full">
+                                {pet.power} 能量
+                              </span>
+                              <span className={`text-[10px] font-black flex items-center gap-1 ${isEquipped ? 'text-[#00B894]' : isOwned ? 'text-[#0984E3]' : 'text-[#F39C12]'}`}>
+                                {isEquipped ? '使用中' : isOwned ? '已擁有' : `${pet.price} 金幣`}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      });
+                    })()}
+                    <button
+                      onClick={() => handleSelectPet(powerModalStudent.id, 0)}
+                      className="col-span-2 mt-2 py-3 rounded-xl text-sm font-bold text-[#D63031] hover:bg-[#FFF5F5] transition-colors"
+                    >
+                      移除寵物頭像
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-8 grid grid-cols-3 gap-4 max-h-[400px] overflow-y-auto">
+                  {['bottts', 'avataaars', 'pixel-art', 'micah', 'miniavs'].map(style => (
+                    <button
+                      key={style}
+                      onClick={() => handleUpdateAvatar(powerModalStudent.id, `https://api.dicebear.com/7.x/${style}/svg?seed=${powerModalStudent.name}`)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-[#F1F3F5] transition-all group"
+                    >
+                      <img 
+                        src={`https://api.dicebear.com/7.x/${style}/svg?seed=${powerModalStudent.name}`} 
+                        alt={style}
+                        className="w-16 h-16 rounded-xl bg-white group-hover:scale-110 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="text-[10px] font-bold text-[#636E72] capitalize">{style}</span>
+                    </button>
+                  ))}
+                  {/* Random seeds */}
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <button
+                      key={i}
+                      onClick={() => handleUpdateAvatar(powerModalStudent.id, `https://api.dicebear.com/7.x/bottts/svg?seed=${powerModalStudent.name}${i}`)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-[#F1F3F5] transition-all group"
+                    >
+                      <img 
+                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${powerModalStudent.name}${i}`} 
+                        alt="random"
+                        className="w-16 h-16 rounded-xl bg-white group-hover:scale-110 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="text-[10px] font-bold text-[#636E72]">風格 {i}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="p-6 bg-[#F8F9FA] flex justify-center">
                 <button 
@@ -1582,12 +2006,32 @@ export default function App() {
               className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative overflow-hidden"
             >
               <div className="p-8 text-center border-b border-[#F1F3F5]">
-                <img 
-                  src={selectedStudent.avatar} 
-                  alt={selectedStudent.name} 
-                  className="w-24 h-24 rounded-full bg-[#F1F3F5] mx-auto mb-4"
-                  referrerPolicy="no-referrer"
-                />
+                <div 
+                  onClick={() => {
+                    if (loggedInStudentId === selectedStudent.id) {
+                      setPowerModalMode('avatar');
+                      setPowerModalStudent(selectedStudent);
+                      setSelectedStudent(null);
+                    }
+                  }}
+                  className={`relative mx-auto mb-4 w-24 h-24 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden ${loggedInStudentId === selectedStudent.id ? 'cursor-pointer group' : ''}`}
+                >
+                  {selectedStudent.equippedPet !== null ? (
+                    <span className="text-5xl">{getPetEmoji(selectedStudent.equippedPet)}</span>
+                  ) : (
+                    <img 
+                      src={selectedStudent.avatar} 
+                      alt={selectedStudent.name} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  {loggedInStudentId === selectedStudent.id && (
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Zap className="text-white w-8 h-8" />
+                    </div>
+                  )}
+                </div>
                 <h2 className="text-2xl font-bold">{t.feedbackFor} {selectedStudent.name}</h2>
                 
                 <div className="flex justify-center gap-4 mt-6">
@@ -1618,8 +2062,10 @@ export default function App() {
                 {(modalTab === 'positive' ? SKILLS : NEEDS_WORK_SKILLS).map(skill => (
                   <button
                     key={skill.id}
+                    disabled={!isTeacher || !!loggedInStudentId}
                     onClick={() => handleAwardPoints(skill)}
                     className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all group ${
+                      (!isTeacher || !!loggedInStudentId) ? 'opacity-50 cursor-not-allowed' :
                       modalTab === 'positive' ? 'hover:bg-[#F0FFF4] hover:text-[#00B894]' : 'hover:bg-[#FFF5F5] hover:text-[#D63031]'
                     }`}
                   >
@@ -1824,20 +2270,24 @@ export default function App() {
             <Users className="w-6 h-6" />
             <span className="text-[10px] font-bold mt-1">{t.classroom}</span>
           </button>
-          <button 
-            onClick={() => setActiveTab('story')}
-            className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'story' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
-          >
-            <BookOpen className="w-6 h-6" />
-            <span className="text-[10px] font-bold mt-1">{t.story}</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('reports')}
-            className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'reports' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
-          >
-            <Award className="w-6 h-6" />
-            <span className="text-[10px] font-bold mt-1">{t.reports}</span>
-          </button>
+          {(!loggedInStudentId || isTeacher) && (
+            <>
+              <button 
+                onClick={() => setActiveTab('story')}
+                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'story' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
+              >
+                <BookOpen className="w-6 h-6" />
+                <span className="text-[10px] font-bold mt-1">{t.story}</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('reports')}
+                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'reports' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
+              >
+                <Award className="w-6 h-6" />
+                <span className="text-[10px] font-bold mt-1">{t.reports}</span>
+              </button>
+            </>
+          )}
         </div>
       </footer>
 
@@ -1867,17 +2317,90 @@ export default function App() {
               </div>
 
               <div className="space-y-4">
+                {/* Student Login Input */}
+                {!isTeacher && !loggedInStudentId && (
+                  <div className="p-4 bg-[#F8F9FA] rounded-3xl border border-[#E1E4E8]">
+                    <label className="block text-[10px] font-black text-[#B2BEC3] uppercase tracking-widest mb-2 px-1">
+                      {t.loginAsStudent}
+                    </label>
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <input 
+                          type="password"
+                          maxLength={6}
+                          value={studentLoginPassword}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            setStudentLoginPassword(val);
+                          }}
+                          placeholder={t.passwordPlaceholder}
+                          className="w-full bg-white border-2 border-[#E1E4E8] rounded-xl px-4 py-3 font-bold text-center tracking-[0.5em] outline-none focus:border-[#6C5CE7] transition-all"
+                        />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B2BEC3]" />
+                      </div>
+                      <button
+                        onClick={() => handleStudentLogin(studentLoginPassword)}
+                        disabled={studentLoginPassword.length !== 6}
+                        className="w-full bg-[#0984E3] text-white py-3 rounded-xl font-black hover:bg-[#0773C5] transition-all disabled:opacity-50"
+                      >
+                        進入
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {loggedInStudentId && (
+                  <div className="p-4 bg-[#00B894]/10 rounded-3xl border border-[#00B894]/20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                        <img 
+                          src={students.find(s => s.id === loggedInStudentId)?.avatar} 
+                          className="w-8 h-8" 
+                          alt="" 
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-[#00B894] uppercase tracking-wider">已登入</p>
+                        <p className="text-sm font-bold text-[#2D3436]">
+                          {students.find(s => s.id === loggedInStudentId)?.name}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleStudentLogout}
+                      className="p-2 hover:bg-[#D63031]/10 rounded-xl transition-colors text-[#D63031]"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+
+                {(!loggedInStudentId || isTeacher) && (
+                  <button 
+                    onClick={() => {
+                      setIsTimerModalOpen(true);
+                      setIsSidebarOpen(false);
+                    }}
+                    className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
+                  >
+                    <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Clock className="w-6 h-6 text-[#00B894]" />
+                    </div>
+                    <span className="font-bold text-[#2D3436]">倒計時</span>
+                  </button>
+                )}
+
                 <button 
                   onClick={() => {
-                    setIsTimerModalOpen(true);
+                    setIsHomeworkModalOpen(true);
                     setIsSidebarOpen(false);
                   }}
-                  className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
+                  className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 transition-all group"
                 >
-                  <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Clock className="w-6 h-6 text-[#00B894]" />
+                  <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-6 h-6 text-[#6C5CE7]" />
                   </div>
-                  <span className="font-bold text-[#2D3436]">倒計時</span>
+                  <span className="font-bold text-[#2D3436]">{t.homework}</span>
                 </button>
               </div>
             </motion.div>
@@ -1996,6 +2519,465 @@ export default function App() {
                 >
                   重置
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Student Password Management Modal */}
+      <AnimatePresence>
+        {isStudentPasswordModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsStudentPasswordModalOpen(false);
+                setPasswordModalStudent(null);
+                setTempStudentPassword('');
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]"
+            >
+              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center">
+                    <Lock className="w-6 h-6 text-[#6C5CE7]" />
+                  </div>
+                  <h2 className="text-2xl font-bold">{t.studentPassword}</h2>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsStudentPasswordModalOpen(false);
+                    setPasswordModalStudent(null);
+                    setTempStudentPassword('');
+                  }}
+                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                >
+                  <X className="w-6 h-6 text-[#636E72]" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto">
+                {passwordModalStudent ? (
+                  <form onSubmit={handleSetStudentPassword} className="space-y-6">
+                    <div className="flex items-center gap-4 p-4 bg-[#F8F9FA] rounded-2xl">
+                      <img src={passwordModalStudent.avatar} className="w-12 h-12 rounded-xl bg-white" alt="" />
+                      <div>
+                        <p className="text-xs font-black text-[#B2BEC3] uppercase tracking-wider">正在設定</p>
+                        <p className="text-lg font-bold text-[#2D3436]">{passwordModalStudent.name}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2 px-1">
+                        {t.setStudentPassword}
+                      </label>
+                      <input 
+                        autoFocus
+                        type="text"
+                        maxLength={6}
+                        value={tempStudentPassword}
+                        onChange={(e) => setTempStudentPassword(e.target.value.replace(/\D/g, ''))}
+                        placeholder={t.passwordPlaceholder}
+                        className="w-full bg-[#F1F3F5] border-2 border-transparent rounded-2xl px-6 py-4 text-2xl font-bold text-center tracking-[0.5em] outline-none focus:border-[#6C5CE7] transition-all"
+                      />
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setPasswordModalStudent(null);
+                          setTempStudentPassword('');
+                        }}
+                        className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                      >
+                        {t.cancel}
+                      </button>
+                      <button 
+                        type="submit"
+                        disabled={tempStudentPassword.length !== 6}
+                        className="flex-1 bg-[#6C5CE7] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#6C5CE7]/30 hover:bg-[#5849BE] disabled:opacity-50 transition-all"
+                      >
+                        {t.save}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-3">
+                    {students.map(student => (
+                      <button
+                        key={student.id}
+                        onClick={() => {
+                          setPasswordModalStudent(student);
+                          setTempStudentPassword(student.password || '');
+                        }}
+                        className="w-full flex items-center justify-between p-4 bg-[#F8F9FA] hover:bg-[#F1F3F5] rounded-2xl transition-all group border border-transparent hover:border-[#6C5CE7]/20"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img src={student.avatar} className="w-10 h-10 rounded-xl bg-white" alt="" />
+                          <span className="font-bold text-[#2D3436]">{student.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {student.password ? (
+                            <span className="text-xs font-mono font-bold text-[#00B894] bg-[#00B894]/10 px-2 py-1 rounded-lg">
+                              {student.password}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-[#B2BEC3]">未設定</span>
+                          )}
+                          <ChevronRight className="w-4 h-4 text-[#B2BEC3] group-hover:text-[#6C5CE7] transition-colors" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Homework Modal */}
+      <AnimatePresence>
+        {isHomeworkModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center z-[80] p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsHomeworkModalOpen(false);
+                setIsAddingHomework(false);
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-[#6C5CE7]" />
+                  </div>
+                  <h2 className="text-2xl font-black text-[#2D3436]">{t.homeworkTitle}</h2>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsHomeworkModalOpen(false);
+                    setIsAddingHomework(false);
+                  }}
+                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                >
+                  <X className="w-6 h-6 text-[#636E72]" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1">
+                {isTeacher && !loggedInStudentId && !isAddingHomework && (
+                  <button 
+                    onClick={() => setIsAddingHomework(true)}
+                    className="w-full py-4 border-2 border-dashed border-[#DFE6E9] rounded-2xl flex items-center justify-center gap-2 text-[#6C5CE7] font-bold hover:bg-[#6C5CE7]/5 hover:border-[#6C5CE7] transition-all mb-6"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t.addHomework}
+                  </button>
+                )}
+
+                {isAddingHomework ? (
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.question}</label>
+                      <textarea 
+                        value={newHomework.question}
+                        onChange={(e) => setNewHomework({...newHomework, question: e.target.value})}
+                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all h-24"
+                        placeholder="請輸入題目內容..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.imageUrl} (選填)</label>
+                      <input 
+                        type="text"
+                        value={newHomework.imageUrl}
+                        onChange={(e) => setNewHomework({...newHomework, imageUrl: e.target.value})}
+                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.teacherAnswer}</label>
+                      <input 
+                        type="text"
+                        value={newHomework.answer}
+                        onChange={(e) => setNewHomework({...newHomework, answer: e.target.value})}
+                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                        placeholder="學生輸入此答案即可獲得獎勵"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.coins} {t.reward}</label>
+                        <input 
+                          type="number"
+                          value={newHomework.coinsReward}
+                          onChange={(e) => setNewHomework({...newHomework, coinsReward: parseInt(e.target.value)})}
+                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.exp} {t.reward}</label>
+                        <input 
+                          type="number"
+                          value={newHomework.expReward}
+                          onChange={(e) => setNewHomework({...newHomework, expReward: parseInt(e.target.value)})}
+                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.expiryTime}</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: t.oneDay, val: 1 },
+                          { label: t.twoDays, val: 2 },
+                          { label: t.threeDays, val: 3 },
+                          { label: t.oneWeek, val: 7 }
+                        ].map((opt) => (
+                          <button
+                            key={opt.val}
+                            onClick={() => {
+                              const date = new Date();
+                              date.setDate(date.getDate() + opt.val);
+                              setNewHomework({ ...newHomework, expiresAt: date.toISOString() });
+                            }}
+                            className={`py-2 rounded-xl font-bold text-xs transition-all ${
+                              new Date(newHomework.expiresAt!).getDate() === new Date(Date.now() + opt.val * 24 * 60 * 60 * 1000).getDate()
+                                ? 'bg-[#6C5CE7] text-white'
+                                : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <button 
+                        onClick={() => setIsAddingHomework(false)}
+                        className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                      >
+                        {t.cancel}
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if (!newHomework.question || !newHomework.answer) return;
+                          const hw: Homework = {
+                            id: Date.now().toString(),
+                            question: newHomework.question!,
+                            answer: newHomework.answer!,
+                            coinsReward: newHomework.coinsReward || 0,
+                            expReward: newHomework.expReward || 0,
+                            imageUrl: newHomework.imageUrl,
+                            completedBy: [],
+                            expiresAt: newHomework.expiresAt || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+                          };
+                          
+                          if (user && activeClassId) {
+                            try {
+                              const hwRef = doc(collection(db, 'homeworks'));
+                              await setDoc(hwRef, { ...hw, id: hwRef.id, classId: activeClassId });
+                            } catch (e) { console.error(e); }
+                          } else {
+                            setHomeworks([...homeworks, hw]);
+                          }
+                          
+                          setNewHomework({ 
+                            question: '', 
+                            answer: '', 
+                            coinsReward: 10, 
+                            expReward: 10, 
+                            imageUrl: '',
+                            expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+                          });
+                          setIsAddingHomework(false);
+                        }}
+                        className="flex-1 py-4 bg-[#6C5CE7] text-white rounded-2xl font-black shadow-lg shadow-[#6C5CE7]/30 hover:bg-[#5849BE] transition-colors"
+                      >
+                        {t.save}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {homeworks.filter(hw => new Date(hw.expiresAt) > new Date()).length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-[#F1F3F5] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <BookOpen className="w-8 h-8 text-[#B2BEC3]" />
+                        </div>
+                        <p className="text-[#B2BEC3] font-bold">{t.noHomework}</p>
+                      </div>
+                    )}
+                    {homeworks
+                      .filter(hw => new Date(hw.expiresAt) > new Date())
+                      .map((hw) => {
+                        const timeLeftMs = new Date(hw.expiresAt).getTime() - Date.now();
+                        const daysLeft = Math.floor(timeLeftMs / (1000 * 60 * 60 * 24));
+                        const hoursLeft = Math.floor((timeLeftMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        
+                        return (
+                          <div key={hw.id} className="bg-[#F8F9FA] rounded-[2.5rem] p-6 border-2 border-[#F1F3F5] space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1 flex-1">
+                                <h3 className="text-lg font-black text-[#2D3436] leading-tight">{hw.question}</h3>
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-[#D63031]">
+                                  <Clock className="w-3 h-3" />
+                                  {t.expiresIn}: {daysLeft > 0 ? `${daysLeft}d ` : ''}{hoursLeft}h
+                                </div>
+                              </div>
+                              {isTeacher && !loggedInStudentId && (
+                                <button 
+                                  onClick={async () => {
+                                    if (user) {
+                                      try { await deleteDoc(doc(db, 'homeworks', hw.id)); } catch (e) {}
+                                    } else {
+                                      setHomeworks(homeworks.filter(h => h.id !== hw.id));
+                                    }
+                                  }}
+                                  className="p-2 text-[#D63031] hover:bg-[#D63031]/10 rounded-xl transition-colors ml-4"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            
+                            {hw.imageUrl && (
+                              <img 
+                                src={hw.imageUrl} 
+                                alt="Homework" 
+                                className="w-full rounded-2xl aspect-video object-cover shadow-sm"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+    
+                            <div className="flex flex-wrap gap-2">
+                              <div className="px-3 py-1 bg-[#F1C40F]/10 text-[#F39C12] rounded-lg text-[10px] font-black border border-[#F1C40F]/20 flex items-center gap-1.5">
+                                <Coins className="w-3 h-3 fill-current" />
+                                +{hw.coinsReward}
+                              </div>
+                              <div className="px-3 py-1 bg-[#00B894]/10 text-[#00B894] rounded-lg text-[10px] font-black border border-[#00B894]/20 flex items-center gap-1.5">
+                                <Star className="w-3 h-3 fill-current" />
+                                +{hw.expReward} EXP
+                              </div>
+                            </div>
+    
+                            {!isTeacher && (
+                              <div className="pt-4 border-t border-[#F1F3F5] space-y-4">
+                                {hw.completedBy?.includes(loggedInStudentId || '') ? (
+                                  <div className="flex items-center justify-center p-4 bg-[#00B894]/10 rounded-2xl border border-[#00B894]/20">
+                                    <span className="text-[#00B894] font-black flex items-center gap-2">
+                                      <CheckCircle2 className="w-5 h-5" />
+                                      已完成此功課
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex gap-2">
+                                      <input 
+                                        type="text"
+                                        value={studentAnswers[hw.id] || ''}
+                                        onChange={(e) => setStudentAnswers({...studentAnswers, [hw.id]: e.target.value})}
+                                        placeholder={t.enterAnswer}
+                                        className="flex-1 bg-white border-2 border-[#E1E4E8] rounded-xl px-4 py-2 font-bold outline-none focus:border-[#6C5CE7] transition-all"
+                                      />
+                                      <button 
+                                        onClick={async () => {
+                                          const answer = studentAnswers[hw.id]?.trim();
+                                          if (!answer) return;
+                                          
+                                          if (answer === hw.answer) {
+                                            setHomeworkFeedback({...homeworkFeedback, [hw.id]: {type: 'success', message: t.correct}});
+                                            playSound('success');
+                                            
+                                            // Award rewards to the logged-in student
+                                            if (loggedInStudentId) {
+                                              const newStudents = students.map(s => {
+                                                if (s.id === loggedInStudentId) {
+                                                  return {
+                                                    ...s,
+                                                    exp: (s.exp || 0) + hw.expReward,
+                                                    coins: (s.coins || 0) + hw.coinsReward
+                                                  };
+                                                }
+                                                return s;
+                                              });
+                                              setStudents(newStudents);
+                                              await syncStudentsToFirestore(newStudents);
+    
+                                              // Update homework completedBy in Firestore
+                                              if (user) {
+                                                const hwRef = doc(db, 'homeworks', hw.id);
+                                                await updateDoc(hwRef, {
+                                                  completedBy: [...(hw.completedBy || []), loggedInStudentId]
+                                                });
+                                              } else {
+                                                // Handle guest mode locally
+                                                setHomeworks(homeworks.map(h => 
+                                                  h.id === hw.id ? { ...h, completedBy: [...(h.completedBy || []), loggedInStudentId] } : h
+                                                ));
+                                              }
+                                            }
+                                          } else {
+                                            setHomeworkFeedback({...homeworkFeedback, [hw.id]: {type: 'error', message: t.wrong}});
+                                            playSound('error');
+                                          }
+                                        }}
+                                        className="bg-[#6C5CE7] text-white px-6 py-2 rounded-xl font-black shadow-lg shadow-[#6C5CE7]/20 hover:bg-[#5849BE] transition-colors"
+                                      >
+                                        {t.submit}
+                                      </button>
+                                    </div>
+                                    {homeworkFeedback[hw.id] && (
+                                      <motion.p 
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`text-sm font-black flex items-center gap-2 ${homeworkFeedback[hw.id]?.type === 'success' ? 'text-[#00B894]' : 'text-[#D63031]'}`}
+                                      >
+                                        {homeworkFeedback[hw.id]?.type === 'success' ? (
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        ) : (
+                                          <XCircle className="w-4 h-4" />
+                                        )}
+                                        {homeworkFeedback[hw.id]?.message}
+                                      </motion.p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )}
+    
+                            {isTeacher && !loggedInStudentId && (
+                              <div className="pt-4 border-t border-[#F1F3F5]">
+                                <p className="text-xs font-black text-[#B2BEC3] uppercase tracking-widest mb-1">{t.teacherAnswer}</p>
+                                <p className="font-bold text-[#6C5CE7]">{hw.answer}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
