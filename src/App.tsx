@@ -52,7 +52,8 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  arrayUnion
 } from 'firebase/firestore';
 
 const SkillIcon = ({ name, className }: { name: string; className?: string }) => {
@@ -1381,6 +1382,38 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           >
+            {/* Class Summary Bar (Teacher only) */}
+            {isTeacher && !loggedInStudentId && students.length > 0 && (
+              <div className="col-span-full bg-white/80 backdrop-blur-md rounded-[2rem] p-4 border border-[#E1E4E8] flex flex-wrap items-center justify-center gap-8 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[#F1C40F]/10 rounded-lg flex items-center justify-center">
+                    <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">班級總金幣</p>
+                    <p className="text-sm font-black text-[#F39C12]">{students.reduce((acc, s) => acc + (s.coins || 0), 0)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[#00B894]/10 rounded-lg flex items-center justify-center">
+                    <Star className="w-4 h-4 text-[#00B894] fill-current" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">班級總經驗</p>
+                    <p className="text-sm font-black text-[#00B894]">{students.reduce((acc, s) => acc + (s.exp || 0), 0)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[#6C5CE7]/10 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-[#6C5CE7]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">學生總數</p>
+                    <p className="text-sm font-black text-[#6C5CE7]">{students.length}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Add Student Card - Square */}
             {isTeacher && !loggedInStudentId && (
               <button 
@@ -1716,9 +1749,19 @@ export default function App() {
 
                         <div className="flex-1">
                           <h3 className="font-bold text-[#2D3436]">{student.name}</h3>
-                          <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">
-                            擁有 {(student.ownedPets || []).length} 隻寵物
-                          </p>
+                          <div className="flex gap-3 mt-1">
+                            <div className="flex items-center gap-1 text-[10px] font-black text-[#F39C12] uppercase tracking-wider">
+                              <Coins className="w-3 h-3 fill-current" />
+                              {student.coins || 0}
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-[#00B894] uppercase tracking-wider">
+                              <Star className="w-3 h-3 fill-current" />
+                              {student.exp || 0} EXP
+                            </div>
+                            <div className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">
+                              {(student.ownedPets || []).length} 隻寵物
+                            </div>
+                          </div>
                         </div>
 
                         <div className="text-right">
@@ -1743,18 +1786,22 @@ export default function App() {
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-4xl mx-auto"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-sm font-bold text-[#636E72] uppercase tracking-wider mb-2">總分數</p>
-                <p className="text-5xl font-black text-[#00B894]">{totalPoints}</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
+                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總分數</p>
+                <p className="text-3xl font-black text-[#00B894]">{totalPoints}</p>
               </div>
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-sm font-bold text-[#636E72] uppercase tracking-wider mb-2">平均分數</p>
-                <p className="text-5xl font-black text-[#0984E3]">{averagePoints}</p>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
+                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總金幣</p>
+                <p className="text-3xl font-black text-[#F39C12]">{students.reduce((acc, s) => acc + (s.coins || 0), 0)}</p>
               </div>
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-sm font-bold text-[#636E72] uppercase tracking-wider mb-2">學生人數</p>
-                <p className="text-5xl font-black text-[#6C5CE7]">{students.length}</p>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
+                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總經驗值</p>
+                <p className="text-3xl font-black text-[#6C5CE7]">{students.reduce((acc, s) => acc + (s.exp || 0), 0)}</p>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
+                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">學生人數</p>
+                <p className="text-3xl font-black text-[#0984E3]">{students.length}</p>
               </div>
             </div>
 
@@ -1768,14 +1815,19 @@ export default function App() {
                     <span className="w-8 font-black text-[#B2BEC3]">#{index + 1}</span>
                     <img src={student.avatar} alt="" className="w-10 h-10 rounded-full bg-[#F1F3F5]" referrerPolicy="no-referrer" />
                     <span className="flex-1 font-bold">{student.name}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 h-2 bg-[#F1F3F5] rounded-full overflow-hidden hidden sm:block">
-                        <div 
-                          className="h-full bg-[#00B894]" 
-                          style={{ width: `${(student.points / Math.max(...students.map(s => s.points))) * 100}%` }}
-                        />
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-[#636E72] uppercase">金幣</span>
+                        <span className="font-bold text-[#F39C12]">{student.coins || 0}</span>
                       </div>
-                      <span className="w-12 text-right font-black text-[#00B894]">{student.points}</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-[#636E72] uppercase">經驗</span>
+                        <span className="font-bold text-[#6C5CE7]">{student.exp || 0}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-[#636E72] uppercase">分數</span>
+                        <span className="font-bold text-[#00B894]">{student.points}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -2911,31 +2963,39 @@ export default function App() {
                                             playSound('success');
                                             
                                             // Award rewards to the logged-in student
-                                            if (loggedInStudentId) {
-                                              const newStudents = students.map(s => {
-                                                if (s.id === loggedInStudentId) {
-                                                  return {
-                                                    ...s,
-                                                    exp: (s.exp || 0) + hw.expReward,
-                                                    coins: (s.coins || 0) + hw.coinsReward
-                                                  };
+                                            if (loggedInStudentId && activeClassId) {
+                                              try {
+                                                const classRef = doc(db, 'classes', activeClassId);
+                                                const classSnap = await getDoc(classRef);
+                                                if (classSnap.exists()) {
+                                                  const currentStudents = classSnap.data().students || [];
+                                                  const updatedStudents = currentStudents.map((s: any) => {
+                                                    if (s.id === loggedInStudentId) {
+                                                      return {
+                                                        ...s,
+                                                        exp: (s.exp || 0) + hw.expReward,
+                                                        coins: (s.coins || 0) + hw.coinsReward
+                                                      };
+                                                    }
+                                                    return s;
+                                                  });
+                                                  await updateDoc(classRef, { students: updatedStudents });
                                                 }
-                                                return s;
-                                              });
-                                              setStudents(newStudents);
-                                              await syncStudentsToFirestore(newStudents);
-    
-                                              // Update homework completedBy in Firestore
-                                              if (user) {
-                                                const hwRef = doc(db, 'homeworks', hw.id);
-                                                await updateDoc(hwRef, {
-                                                  completedBy: [...(hw.completedBy || []), loggedInStudentId]
-                                                });
-                                              } else {
-                                                // Handle guest mode locally
-                                                setHomeworks(homeworks.map(h => 
-                                                  h.id === hw.id ? { ...h, completedBy: [...(h.completedBy || []), loggedInStudentId] } : h
-                                                ));
+
+                                                // Update homework completedBy in Firestore
+                                                if (user) {
+                                                  const hwRef = doc(db, 'homeworks', hw.id);
+                                                  await updateDoc(hwRef, {
+                                                    completedBy: arrayUnion(loggedInStudentId)
+                                                  });
+                                                } else {
+                                                  // Handle guest mode locally
+                                                  setHomeworks(homeworks.map(h => 
+                                                    h.id === hw.id ? { ...h, completedBy: [...(h.completedBy || []), loggedInStudentId] } : h
+                                                  ));
+                                                }
+                                              } catch (e) {
+                                                console.error("Error awarding homework rewards:", e);
                                               }
                                             }
                                           } else {
