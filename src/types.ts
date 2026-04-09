@@ -7,6 +7,7 @@ export interface Student {
   ownedPets: number[]; // Array of pet levels (1: Dog, 2: Cat, 3: Rabbit, 4: Fox)
   equippedPet: number | null; // Currently selected pet level for avatar
   coins: number;
+  medals: number;
   maxLevelReached: number;
   password?: string;
 }

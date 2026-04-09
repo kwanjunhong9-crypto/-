@@ -28,7 +28,10 @@ import {
   Volume2,
   CheckCircle2,
   XCircle,
-  ChevronRight
+  ChevronRight,
+  Medal,
+  Package,
+  Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework } from './types';
@@ -55,6 +58,43 @@ import {
   serverTimestamp,
   arrayUnion
 } from 'firebase/firestore';
+
+const CHESTS = [
+  {
+    level: 1,
+    cost: 3,
+    rewards: [
+      { amount: 30, weight: 75 },
+      { amount: 100, weight: 15 },
+      { amount: 120, weight: 5 },
+      { amount: 200, weight: 4 },
+      { amount: 250, weight: 1 },
+    ]
+  },
+  {
+    level: 2,
+    cost: 6,
+    rewards: [
+      { amount: 100, weight: 50 },
+      { amount: 150, weight: 25 },
+      { amount: 200, weight: 7 },
+      { amount: 210, weight: 6 },
+      { amount: 230, weight: 5 },
+      { amount: 300, weight: 4 },
+      { amount: 350, weight: 3 },
+    ]
+  },
+  {
+    level: 3,
+    cost: 9,
+    rewards: [
+      { amount: 300, weight: 50 },
+      { amount: 500, weight: 30 },
+      { amount: 800, weight: 15 },
+      { amount: 1000, weight: 5 },
+    ]
+  }
+];
 
 const SkillIcon = ({ name, className }: { name: string; className?: string }) => {
   switch (name) {
@@ -187,7 +227,14 @@ const TRANSLATIONS = {
     threeDays: '3 天',
     oneWeek: '1 週',
     expiresIn: '剩餘時間',
-    expired: '已截止'
+    expired: '已截止',
+    chest: '寶箱',
+    openChest: '開啟寶箱',
+    medals: '獎章',
+    chestRewards: '寶箱獎勵',
+    probability: '機率',
+    notEnoughMedals: '獎章不足',
+    chestLevel: '等級'
   },
   ms: {
     myClasses: 'Kelas Saya',
@@ -252,7 +299,21 @@ const TRANSLATIONS = {
     setStudentPassword: 'Tetapkan Kata Laluan Pelajar',
     passwordPlaceholder: '6 digit',
     onlyOwnProfile: 'Anda hanya boleh melihat profil sendiri',
-    teacherOnly: 'Hanya guru boleh melakukan tindakan ini'
+    teacherOnly: 'Hanya guru boleh melakukan tindakan ini',
+    expiryTime: 'Masa Tamat',
+    oneDay: '1 Hari',
+    twoDays: '2 Hari',
+    threeDays: '3 Hari',
+    oneWeek: '1 Minggu',
+    expiresIn: 'Tamat dalam',
+    expired: 'Tamat',
+    chest: 'Peti',
+    openChest: 'Buka Peti',
+    medals: 'Pingat',
+    chestRewards: 'Ganjaran Peti',
+    probability: 'Kebarangkalian',
+    notEnoughMedals: 'Pingat tidak mencukupi',
+    chestLevel: 'Tahap'
   },
   en: {
     myClasses: 'My Classes',
@@ -324,7 +385,14 @@ const TRANSLATIONS = {
     threeDays: '3 Days',
     oneWeek: '1 Week',
     expiresIn: 'Expires in',
-    expired: 'Expired'
+    expired: 'Expired',
+    chest: 'Chest',
+    openChest: 'Open Chest',
+    medals: 'Medals',
+    chestRewards: 'Chest Rewards',
+    probability: 'Probability',
+    notEnoughMedals: 'Not enough medals',
+    chestLevel: 'Level'
   }
 };
 
@@ -377,6 +445,9 @@ export default function App() {
   const [isStudentPasswordModalOpen, setIsStudentPasswordModalOpen] = useState(false);
   const [passwordModalStudent, setPasswordModalStudent] = useState<Student | null>(null);
   const [tempStudentPassword, setTempStudentPassword] = useState('');
+
+  const [isChestModalOpen, setIsChestModalOpen] = useState(false);
+  const [chestReward, setChestReward] = useState<{amount: number, level: number} | null>(null);
 
   // Timer & Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -762,7 +833,7 @@ export default function App() {
   };
 
   const syncStudentsToFirestore = async (newStudents: Student[]) => {
-    if (user && isTeacher && activeClassId) {
+    if (activeClassId && (isTeacher || loggedInStudentId)) {
       try {
         await updateDoc(doc(db, 'classes', activeClassId), {
           students: newStudents
@@ -1107,6 +1178,47 @@ export default function App() {
     }
   };
 
+  const handleOpenChest = (chestLevel: number) => {
+    const chest = CHESTS.find(c => c.level === chestLevel);
+    if (!chest || !loggedInStudentId) return;
+
+    const student = students.find(s => s.id === loggedInStudentId);
+    if (!student || (student.medals || 0) < chest.cost) {
+      alert(TRANSLATIONS[language].notEnoughMedals);
+      return;
+    }
+
+    // Determine reward based on weights
+    const totalWeight = chest.rewards.reduce((sum, r) => sum + r.weight, 0);
+    let random = Math.random() * totalWeight;
+    let selectedReward = chest.rewards[0];
+
+    for (const reward of chest.rewards) {
+      if (random < reward.weight) {
+        selectedReward = reward;
+        break;
+      }
+      random -= reward.weight;
+    }
+
+    // Update student
+    const newStudents = students.map(s => {
+      if (s.id === loggedInStudentId) {
+        return {
+          ...s,
+          medals: s.medals - chest.cost,
+          coins: (s.coins || 0) + selectedReward.amount
+        };
+      }
+      return s;
+    });
+
+    setStudents(newStudents);
+    syncStudentsToFirestore(newStudents);
+    setChestReward({ amount: selectedReward.amount, level: chestLevel });
+    playSound('power');
+  };
+
   const getPetEmoji = (petId: number | null | undefined) => {
     if (petId === null || petId === undefined) return null;
     return PETS.find(p => p.id === petId)?.emoji || null;
@@ -1170,6 +1282,7 @@ export default function App() {
         ownedPets: [],
         equippedPet: null,
         coins: 0,
+        medals: 0,
         maxLevelReached: 0
       };
       const newStudents = [...students, newStudent];
@@ -1356,6 +1469,26 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-4">
+            {loggedInStudentId && !isTeacher && (
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-[#E1E4E8] shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
+                  <span className="font-black text-[#F39C12] text-sm">
+                    {students.find(s => s.id === loggedInStudentId)?.coins || 0}
+                  </span>
+                </div>
+                <div className="w-px h-4 bg-[#E1E4E8]" />
+                <button 
+                  onClick={() => setIsChestModalOpen(true)}
+                  className="flex items-center gap-1.5 hover:scale-105 transition-transform"
+                >
+                  <Medal className="w-4 h-4 text-[#6C5CE7] fill-current" />
+                  <span className="font-black text-[#6C5CE7] text-sm">
+                    {students.find(s => s.id === loggedInStudentId)?.medals || 0}
+                  </span>
+                </button>
+              </div>
+            )}
             <LanguageSwitcher />
             <div className="hidden md:block text-right">
               <p className="text-sm font-bold">{user ? user.displayName : '史密斯老師'}</p>
@@ -1836,6 +1969,101 @@ export default function App() {
           </motion.div>
         )}
       </main>
+
+      {/* Chest Modal */}
+      <AnimatePresence>
+        {isChestModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!chestReward) setIsChestModalOpen(false);
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden"
+            >
+              {chestReward ? (
+                <div className="p-8 text-center">
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                    className="w-24 h-24 bg-[#F1C40F] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+                  >
+                    <Coins className="w-12 h-12 text-white fill-current" />
+                  </motion.div>
+                  <h2 className="text-3xl font-black text-[#2D3436] mb-2">恭喜獲得！</h2>
+                  <p className="text-5xl font-black text-[#F39C12] mb-6">+{chestReward.amount} 金幣</p>
+                  <button 
+                    onClick={() => setChestReward(null)}
+                    className="w-full bg-[#6C5CE7] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5849BE] transition-all"
+                  >
+                    太棒了！
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="p-6 bg-[#6C5CE7] text-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Package className="w-6 h-6" />
+                      <h2 className="text-xl font-black">{t.chest}</h2>
+                    </div>
+                    <button onClick={() => setIsChestModalOpen(false)} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                    {CHESTS.map((chest) => (
+                      <div key={chest.level} className="bg-[#F8F9FA] p-5 rounded-3xl border-2 border-[#E1E4E8] hover:border-[#6C5CE7] transition-all group">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Gift className="w-6 h-6 text-[#6C5CE7]" />
+                            </div>
+                            <div>
+                              <h3 className="font-black text-[#2D3436]">Level {chest.level} {t.chest}</h3>
+                              <div className="flex items-center gap-1 text-[#6C5CE7] font-bold text-sm">
+                                <Medal className="w-3 h-3 fill-current" />
+                                {chest.cost} {t.medals}
+                              </div>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => handleOpenChest(chest.level)}
+                            disabled={(students.find(s => s.id === loggedInStudentId)?.medals || 0) < chest.cost}
+                            className="bg-[#6C5CE7] text-white px-6 py-2 rounded-xl font-black disabled:bg-[#DFE6E9] disabled:cursor-not-allowed hover:bg-[#5849BE] transition-all shadow-md"
+                          >
+                            {t.openChest}
+                          </button>
+                        </div>
+                        
+                        <div className="bg-white rounded-2xl p-3 space-y-2">
+                          <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider mb-1">{t.chestRewards}：</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {chest.rewards.map((reward, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs font-bold">
+                                <span className="text-[#F39C12]">{reward.amount} 金幣</span>
+                                <span className="text-[#B2BEC3]">{reward.weight}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Power Selection Modal */}
       <AnimatePresence>
@@ -2932,6 +3160,10 @@ export default function App() {
                                 <Star className="w-3 h-3 fill-current" />
                                 +{hw.expReward} EXP
                               </div>
+                              <div className="px-3 py-1 bg-[#6C5CE7]/10 text-[#6C5CE7] rounded-lg text-[10px] font-black border border-[#6C5CE7]/20 flex items-center gap-1.5">
+                                <Medal className="w-3 h-3 fill-current" />
+                                +1 {t.medals}
+                              </div>
                             </div>
     
                             {!isTeacher && (
@@ -2974,7 +3206,8 @@ export default function App() {
                                                       return {
                                                         ...s,
                                                         exp: (s.exp || 0) + hw.expReward,
-                                                        coins: (s.coins || 0) + hw.coinsReward
+                                                        coins: (s.coins || 0) + hw.coinsReward,
+                                                        medals: (s.medals || 0) + 1
                                                       };
                                                     }
                                                     return s;
