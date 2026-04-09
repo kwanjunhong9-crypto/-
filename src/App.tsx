@@ -1066,13 +1066,32 @@ export default function App() {
               </button>
             )}
 
-            {students.map((student) => (
-              <motion.div
-                key={student.id}
-                layoutId={student.id}
-                whileHover={{ y: -5 }}
-                className="bg-white rounded-[2.5rem] p-4 shadow-sm border-2 border-[#E1E4E8] flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl hover:border-[#00B894]/30"
-              >
+            {students.map((student) => {
+              const level = Math.floor(student.points / 10);
+              let borderColor = 'border-[#E1E4E8]';
+              let hoverBorderColor = 'hover:border-[#00B894]/30';
+              
+              if (level >= 1 && level <= 20) {
+                borderColor = 'border-[#74b9ff]'; // Blue
+                hoverBorderColor = 'hover:border-[#0984e3]';
+              } else if (level >= 21 && level <= 30) {
+                borderColor = 'border-[#ffeaa7]'; // Yellow
+                hoverBorderColor = 'hover:border-[#d6a01e]';
+              } else if (level >= 31 && level <= 40) {
+                borderColor = 'border-[#a29bfe]'; // Purple
+                hoverBorderColor = 'hover:border-[#6c5ce7]';
+              } else if (level > 40) {
+                borderColor = 'border-[#fab1a0]'; // Red/Orange for higher levels
+                hoverBorderColor = 'hover:border-[#e17055]';
+              }
+
+              return (
+                <motion.div
+                  key={student.id}
+                  layoutId={student.id}
+                  whileHover={{ y: -5 }}
+                  className={`bg-white rounded-[2.5rem] p-4 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor}`}
+                >
                 {/* Edit Button */}
                 {isTeacher && (
                   <button 
@@ -1187,7 +1206,8 @@ export default function App() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </motion.div>
         )}
 
