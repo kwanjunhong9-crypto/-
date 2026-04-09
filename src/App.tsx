@@ -1051,18 +1051,18 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           >
             {/* Add Student Card */}
             {isTeacher && (
               <button 
                 onClick={() => setIsAddingStudent(true)}
-                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group"
+                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group"
               >
-                <div className="w-12 h-12 bg-[#F1F3F5] rounded-full flex items-center justify-center group-hover:bg-[#00B894] transition-colors">
-                  <Plus className="w-6 h-6 text-[#636E72] group-hover:text-white" />
+                <div className="w-10 h-10 bg-[#F1F3F5] rounded-full flex items-center justify-center group-hover:bg-[#00B894] transition-colors">
+                  <Plus className="w-5 h-5 text-[#636E72] group-hover:text-white" />
                 </div>
-                <span className="text-sm font-bold text-[#636E72] group-hover:text-[#00B894]">{t.addStudentBtn}</span>
+                <span className="text-xs font-bold text-[#636E72] group-hover:text-[#00B894]">{t.addStudentBtn}</span>
               </button>
             )}
 
@@ -1071,7 +1071,7 @@ export default function App() {
                 key={student.id}
                 layoutId={student.id}
                 whileHover={{ y: -5 }}
-                className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#E1E4E8] flex flex-col items-center gap-4 relative overflow-hidden group transition-all hover:shadow-xl hover:border-[#00B894]/30"
+                className="bg-white rounded-[2rem] p-4 shadow-sm border border-[#E1E4E8] flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl hover:border-[#00B894]/30"
               >
                 {/* Edit Button - Moved to top right */}
                 {isTeacher && (
@@ -1080,9 +1080,9 @@ export default function App() {
                       e.stopPropagation();
                       handleEditStudent(student);
                     }}
-                    className="absolute top-4 right-4 p-2 bg-[#F1F3F5] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] z-10"
+                    className="absolute top-3 right-3 p-1.5 bg-[#F1F3F5] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] z-10"
                   >
-                    <Pencil className="w-4 h-4 text-[#636E72]" />
+                    <Pencil className="w-3.5 h-3.5 text-[#636E72]" />
                   </button>
                 )}
 
@@ -1095,9 +1095,9 @@ export default function App() {
                   }}
                   className={`relative ${isTeacher ? 'cursor-pointer group/avatar' : ''}`}
                 >
-                  <div className="w-28 h-28 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden border-4 border-white shadow-inner transition-transform group-hover/avatar:scale-105">
+                  <div className="w-20 h-20 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden border-2 border-white shadow-inner transition-transform group-hover/avatar:scale-105">
                     {student.equippedPet !== null ? (
-                      <span className="text-6xl animate-bounce-slow">
+                      <span className="text-4xl animate-bounce-slow">
                         {getPetEmoji(student.equippedPet)}
                       </span>
                     ) : (
@@ -1109,41 +1109,39 @@ export default function App() {
                       />
                     )}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-[#6C5CE7] text-white p-2 rounded-full shadow-lg opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                    <Zap className="w-4 h-4 fill-current" />
+                  <div className="absolute -bottom-1 -right-1 bg-[#6C5CE7] text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                    <Zap className="w-3 h-3 fill-current" />
                   </div>
                 </div>
                 
                 <div className="text-center w-full">
-                  <h3 className="font-bold text-xl text-[#2D3436]">{student.name}</h3>
+                  <h3 className="font-bold text-lg text-[#2D3436] truncate px-2">{student.name}</h3>
                 </div>
                 
                 {/* Points Pill - Click to Award Points */}
                 <button 
                   onClick={() => isTeacher && setSelectedStudent(student)}
-                  className={`bg-[#00B894] text-white px-6 py-2 rounded-2xl text-lg font-black shadow-lg shadow-[#00B894]/20 transition-all flex items-center gap-2 ${
+                  className={`bg-[#00B894] text-white px-4 py-1.5 rounded-xl text-base font-black shadow-lg shadow-[#00B894]/20 transition-all flex items-center gap-1.5 ${
                     isTeacher ? 'hover:bg-[#00A383] hover:scale-110 active:scale-95' : 'cursor-default'
                   }`}
                 >
                   <span>{student.points}</span>
-                  <span className="text-xs opacity-80 uppercase tracking-wider">{t.pointsUnit}</span>
+                  <span className="text-[10px] opacity-80 uppercase tracking-wider">{t.pointsUnit}</span>
                 </button>
 
                 {/* Level Button - Based on tens digit of points */}
-                <div className="flex items-center gap-2">
-                  <button
-                    className="flex items-center gap-2 px-6 py-1.5 bg-[#0984E3] text-white rounded-xl text-xs font-bold hover:bg-[#0873C4] transition-colors shadow-md shadow-[#0984E3]/20"
-                  >
-                    <Award className="w-3 h-3 fill-current" />
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0984E3] text-white rounded-lg text-[10px] font-bold shadow-md shadow-[#0984E3]/20">
+                    <Award className="w-2.5 h-2.5 fill-current" />
                     {t.level}
-                  </button>
-                  <div className="bg-[#F1F3F5] px-3 py-1 rounded-lg text-sm font-black text-[#0984E3] border border-[#0984E3]/20">
+                  </div>
+                  <div className="bg-[#F1F3F5] px-2 py-0.5 rounded-md text-xs font-black text-[#0984E3] border border-[#0984E3]/20">
                     {Math.floor(student.points / 10)}
                   </div>
                 </div>
 
                 {/* Power Button - Added back as requested */}
-                <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1151,14 +1149,14 @@ export default function App() {
                       setPowerModalMode('pet');
                       setPowerModalStudent(student);
                     }}
-                    className={`mt-1 flex items-center gap-2 px-4 py-1.5 bg-[#6C5CE7] text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-[#6C5CE7]/20 ${
+                    className={`mt-1 flex items-center gap-1.5 px-3 py-1 bg-[#6C5CE7] text-white rounded-lg text-[10px] font-bold transition-colors shadow-md shadow-[#6C5CE7]/20 ${
                       isTeacher ? 'hover:bg-[#5849BE]' : 'cursor-default'
                     }`}
                   >
-                    <Zap className="w-3 h-3 fill-current" />
+                    <Zap className="w-2.5 h-2.5 fill-current" />
                     {t.energy}
                   </button>
-                  <div className="mt-1 bg-[#F1F3F5] px-2 py-1 rounded-lg text-[10px] font-black text-[#6C5CE7] border border-[#6C5CE7]/20">
+                  <div className="mt-1 bg-[#F1F3F5] px-2 py-0.5 rounded-md text-[10px] font-black text-[#6C5CE7] border border-[#6C5CE7]/20">
                     {getPetPower(student)} {t.energyUnit}
                   </div>
                   
@@ -1169,12 +1167,12 @@ export default function App() {
                       if (!isTeacher) return;
                       setCoinsModalStudent(student);
                     }}
-                    className={`mt-1 flex items-center gap-1.5 px-3 py-1 bg-[#F1C40F]/10 text-[#F39C12] rounded-lg text-[10px] font-black border border-[#F1C40F]/20 transition-colors ${
+                    className={`mt-1 flex items-center gap-1 px-2 py-0.5 bg-[#F1C40F]/10 text-[#F39C12] rounded-md text-[10px] font-black border border-[#F1C40F]/20 transition-colors ${
                       isTeacher ? 'hover:bg-[#F1C40F]/20 active:scale-95' : 'cursor-default'
                     }`}
                     title={isTeacher ? "點擊獎勵金幣" : ""}
                   >
-                    <Coins className="w-3 h-3 fill-current" />
+                    <Coins className="w-2.5 h-2.5 fill-current" />
                     {student.coins || 0}
                   </button>
                 </div>
