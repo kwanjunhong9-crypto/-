@@ -1813,6 +1813,15 @@ export default function App() {
                 </>
               )}
             </div>
+            {isTeacher && !loggedInStudentId && (
+              <button 
+                onClick={() => setIsAddingStudent(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B894] text-white hover:bg-[#00A383] transition-colors shadow-sm font-bold text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{t.addStudentBtn}</span>
+              </button>
+            )}
             {(!loggedInStudentId || isTeacher) && (
               <button 
                 onClick={handleExit}
@@ -1832,11 +1841,19 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+            className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3"
           >
             {/* Class Summary Bar (Teacher only) */}
             {isTeacher && !loggedInStudentId && students.length > 0 && (
-              <div className="col-span-full bg-white/80 backdrop-blur-md rounded-[2rem] p-4 border border-[#E1E4E8] flex flex-wrap items-center justify-center gap-8 mb-2">
+              <div className="col-span-full bg-white/80 backdrop-blur-md rounded-[2rem] p-4 border border-[#E1E4E8] flex flex-wrap items-center justify-center gap-6 mb-2">
+                <button 
+                  onClick={() => setIsAddingStudent(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#00B894] text-white rounded-xl font-bold hover:bg-[#00A383] transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t.addStudentBtn}
+                </button>
+                <div className="w-px h-6 bg-[#E1E4E8] hidden sm:block" />
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-[#F1C40F]/10 rounded-lg flex items-center justify-center">
                     <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
@@ -1870,12 +1887,12 @@ export default function App() {
             {isTeacher && !loggedInStudentId && (
               <button 
                 onClick={() => setIsAddingStudent(true)}
-                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group shadow-sm"
+                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group shadow-sm"
               >
-                <div className="w-12 h-12 bg-[#F1F3F5] rounded-2xl flex items-center justify-center group-hover:bg-[#00B894] transition-colors">
-                  <Plus className="w-6 h-6 text-[#636E72] group-hover:text-white" />
+                <div className="w-10 h-10 bg-[#F1F3F5] rounded-xl flex items-center justify-center group-hover:bg-[#00B894] transition-colors">
+                  <Plus className="w-5 h-5 text-[#636E72] group-hover:text-white" />
                 </div>
-                <span className="text-sm font-black text-[#636E72] group-hover:text-[#00B894]">{t.addStudentBtn}</span>
+                <span className="text-[10px] font-black text-[#636E72] group-hover:text-[#00B894] text-center px-1">{t.addStudentBtn}</span>
               </button>
             )}
 
@@ -1883,12 +1900,12 @@ export default function App() {
             {isTeacher && !loggedInStudentId && (
               <button 
                 onClick={() => setIsStudentPasswordModalOpen(true)}
-                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-[#6C5CE7] hover:bg-[#F5F3FF] transition-all group shadow-sm"
+                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#6C5CE7] hover:bg-[#F5F3FF] transition-all group shadow-sm"
               >
-                <div className="w-12 h-12 bg-[#F1F3F5] rounded-2xl flex items-center justify-center group-hover:bg-[#6C5CE7] transition-colors">
-                  <Lock className="w-6 h-6 text-[#636E72] group-hover:text-white" />
+                <div className="w-10 h-10 bg-[#F1F3F5] rounded-xl flex items-center justify-center group-hover:bg-[#6C5CE7] transition-colors">
+                  <Lock className="w-5 h-5 text-[#636E72] group-hover:text-white" />
                 </div>
-                <span className="text-sm font-black text-[#636E72] group-hover:text-[#6C5CE7]">{t.studentPassword}</span>
+                <span className="text-[10px] font-black text-[#636E72] group-hover:text-[#6C5CE7] text-center px-1">{t.studentPassword}</span>
               </button>
             )}
 
@@ -1932,7 +1949,7 @@ export default function App() {
                       alert(t.onlyOwnProfile);
                     }
                   }}
-                  className={`bg-white rounded-[2.5rem] p-4 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-3 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
+                  className={`bg-white rounded-3xl p-3 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-2 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
                 >
                 {/* Edit Button */}
                 {isTeacher && !loggedInStudentId && (
@@ -1955,7 +1972,7 @@ export default function App() {
                     setPowerModalMode('avatar');
                     setPowerModalStudent(student);
                   }}
-                  className={`w-full aspect-square bg-[#F1F3F5] rounded-[2rem] flex items-center justify-center overflow-hidden relative ${((isTeacher && !loggedInStudentId) || isSelf) ? 'cursor-pointer group/avatar' : ''}`}
+                  className={`w-full aspect-square bg-[#F1F3F5] rounded-2xl flex items-center justify-center overflow-hidden relative ${((isTeacher && !loggedInStudentId) || isSelf) ? 'cursor-pointer group/avatar' : ''}`}
                 >
                   {student.equippedPet !== null ? (
                     <span className="text-5xl animate-bounce-slow">
@@ -1985,11 +2002,11 @@ export default function App() {
                 </div>
                 
                 <div className="text-center w-full">
-                  <h3 className="font-black text-base text-[#2D3436] uppercase tracking-wider truncate px-2">{student.name}</h3>
+                  <h3 className="font-black text-sm text-[#2D3436] uppercase tracking-wider truncate px-1">{student.name}</h3>
                 </div>
                 
                 {/* Info Stack */}
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-1.5">
                   {/* Points Pill - Moved Above Level */}
                   <button 
                     onClick={(e) => {
@@ -2000,18 +2017,18 @@ export default function App() {
                         setSelectedStudent(student);
                       }
                     }}
-                    className="w-full py-1.5 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-2 hover:bg-[#E1E4E8] transition-colors"
+                    className="w-full py-1 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-1.5 hover:bg-[#E1E4E8] transition-colors"
                   >
-                    <Star className="w-3.5 h-3.5 text-[#F1C40F] fill-current" />
-                    <span className="text-[10px] font-black text-[#636E72]">
+                    <Star className="w-3 h-3 text-[#F1C40F] fill-current" />
+                    <span className="text-[9px] font-black text-[#636E72]">
                       {student.points} {t.pointsUnit}
                     </span>
                   </button>
 
                   {/* Stage Pill */}
-                  <div className="w-full py-1.5 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-2 border border-[#E1E4E8]/50">
-                    <Award className="w-3.5 h-3.5 text-[#0984E3] fill-current" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#636E72]">
+                  <div className="w-full py-1 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-1.5 border border-[#E1E4E8]/50">
+                    <Award className="w-3 h-3 text-[#0984E3] fill-current" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#636E72]">
                       {t.stage} {Math.floor((student.points || 0) / 30)}
                     </span>
                   </div>
@@ -2024,10 +2041,10 @@ export default function App() {
                       setPowerModalMode('pet');
                       setPowerModalStudent(student);
                     }}
-                    className={`w-full py-1.5 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-2 border border-[#E1E4E8]/50 transition-colors ${((isTeacher && !loggedInStudentId) || isSelf) ? 'hover:bg-[#E1E4E8]' : ''}`}
+                    className={`w-full py-1 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-1.5 border border-[#E1E4E8]/50 transition-colors ${((isTeacher && !loggedInStudentId) || isSelf) ? 'hover:bg-[#E1E4E8]' : ''}`}
                   >
-                    <Zap className="w-3.5 h-3.5 text-[#6C5CE7] fill-current" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#636E72]">
+                    <Zap className="w-3 h-3 text-[#6C5CE7] fill-current" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#636E72]">
                       POWER: {getPetPower(student)}
                     </span>
                   </button>
@@ -2039,10 +2056,10 @@ export default function App() {
                       if (!isTeacher) return;
                       setCoinsModalStudent(student);
                     }}
-                    className="w-full py-1.5 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-2 hover:bg-[#E1E4E8] transition-colors"
+                    className="w-full py-1 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-1.5 hover:bg-[#E1E4E8] transition-colors"
                   >
-                    <Coins className="w-3.5 h-3.5 text-[#F39C12] fill-current" />
-                    <span className="text-[10px] font-black text-[#636E72]">
+                    <Coins className="w-3 h-3 text-[#F39C12] fill-current" />
+                    <span className="text-[9px] font-black text-[#636E72]">
                       {student.coins || 0}
                     </span>
                   </button>
@@ -2431,7 +2448,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
                   {students.map(student => (
                     <motion.button
                       key={student.id}
@@ -2439,9 +2456,9 @@ export default function App() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleAttackBoss(student)}
                       disabled={isBossDefeated}
-                      className="bg-white p-4 rounded-3xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                      className="bg-white p-2 rounded-2xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                     >
-                      <div className="relative w-16 h-16 mx-auto mb-3 bg-[#F1F3F5] rounded-2xl flex items-center justify-center overflow-hidden shadow-sm">
+                      <div className="relative w-12 h-12 mx-auto mb-2 bg-[#F1F3F5] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                         {student.equippedPet !== null ? (
                           <span className="text-3xl">
                             {getPetEmoji(student.equippedPet)}
