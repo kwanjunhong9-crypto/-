@@ -1469,7 +1469,7 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-4">
-            {loggedInStudentId && !isTeacher && (
+            {loggedInStudentId && (
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-[#E1E4E8] shadow-sm">
                 <div className="flex items-center gap-1.5">
                   <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
@@ -1481,6 +1481,7 @@ export default function App() {
                 <button 
                   onClick={() => setIsChestModalOpen(true)}
                   className="flex items-center gap-1.5 hover:scale-105 transition-transform"
+                  title={t.medals}
                 >
                   <Medal className="w-4 h-4 text-[#6C5CE7] fill-current" />
                   <span className="font-black text-[#6C5CE7] text-sm">
@@ -1491,8 +1492,17 @@ export default function App() {
             )}
             <LanguageSwitcher />
             <div className="hidden md:block text-right">
-              <p className="text-sm font-bold">{user ? user.displayName : '史密斯老師'}</p>
-              <p className="text-xs text-[#636E72]">{user ? '認證教師' : '遊客教師'}</p>
+              {loggedInStudentId ? (
+                <>
+                  <p className="text-sm font-bold">{students.find(s => s.id === loggedInStudentId)?.name || '學生'}</p>
+                  <p className="text-xs text-[#636E72]">學生身份</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-bold">{user ? user.displayName : '史密斯老師'}</p>
+                  <p className="text-xs text-[#636E72]">{user ? '認證教師' : '遊客教師'}</p>
+                </>
+              )}
             </div>
             {(!loggedInStudentId || isTeacher) && (
               <button 
