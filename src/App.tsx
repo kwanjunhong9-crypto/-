@@ -33,7 +33,10 @@ import {
   Gift,
   LayoutGrid,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ZoomIn,
+  ZoomOut,
+  Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework } from './types';
@@ -546,6 +549,10 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Image Viewer State
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [imageZoom, setImageZoom] = useState(1);
+
   // Auth State Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -765,15 +772,36 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (limit to 1MB for Firestore)
-    if (file.size > 1024 * 1024) {
-      alert('圖片太大了！請選擇小於 1MB 的圖片。');
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setNewHomework({ ...newHomework, imageUrl: reader.result as string });
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Max dimension 800px
+        const maxDim = 800;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = (height / width) * maxDim;
+            width = maxDim;
+          } else {
+            width = (width / height) * maxDim;
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Compress to jpeg with 0.7 quality
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setNewHomework({ ...newHomework, imageUrl: dataUrl });
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -2102,12 +2130,23 @@ export default function App() {
                   <p className="text-[#2D3436] leading-relaxed">{post.content}</p>
                 </div>
                 {post.imageUrl && (
-                  <img 
-                    src={post.imageUrl} 
-                    alt="Post content" 
-                    className="w-full h-auto"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="flex justify-center bg-black/5 relative group">
+                    <img 
+                      src={post.imageUrl} 
+                      alt="Post content" 
+                      className="max-w-full max-h-[500px] h-auto object-contain cursor-zoom-in"
+                      referrerPolicy="no-referrer"
+                      onClick={() => {
+                        setViewingImageUrl(post.imageUrl!);
+                        setImageZoom(1);
+                      }}
+                    />
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <div className="bg-black/50 p-2 rounded-full backdrop-blur-sm">
+                        <Maximize2 className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div className="p-4 bg-[#FAFAFA] flex items-center gap-6">
                   <button 
@@ -3590,12 +3629,23 @@ export default function App() {
                             </div>
                             
                             {hw.imageUrl && (
-                              <img 
-                                src={hw.imageUrl} 
-                                alt="Homework" 
-                                className="w-full rounded-2xl h-auto shadow-sm"
-                                referrerPolicy="no-referrer"
-                              />
+                              <div className="flex justify-center relative group">
+                                <img 
+                                  src={hw.imageUrl} 
+                                  alt="Homework" 
+                                  className="max-w-full max-h-[400px] rounded-2xl h-auto shadow-sm object-contain cursor-zoom-in"
+                                  referrerPolicy="no-referrer"
+                                  onClick={() => {
+                                    setViewingImageUrl(hw.imageUrl!);
+                                    setImageZoom(1);
+                                  }}
+                                />
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                  <div className="bg-black/50 p-1.5 rounded-full backdrop-blur-sm">
+                                    <Maximize2 className="w-4 h-4 text-white" />
+                                  </div>
+                                </div>
+                              </div>
                             )}
     
                             <div className="flex flex-wrap gap-2">
@@ -3721,6 +3771,58 @@ export default function App() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Viewer Modal */}
+      <AnimatePresence>
+        {viewingImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 md:p-8"
+          >
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <div className="flex items-center bg-white/10 rounded-full p-1 backdrop-blur-md">
+                <button 
+                  onClick={() => setImageZoom(prev => Math.max(0.5, prev - 0.25))}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors text-white"
+                >
+                  <ZoomOut className="w-6 h-6" />
+                </button>
+                <span className="px-3 text-white font-bold min-w-[60px] text-center">
+                  {Math.round(imageZoom * 100)}%
+                </span>
+                <button 
+                  onClick={() => setImageZoom(prev => Math.min(3, prev + 0.25))}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors text-white"
+                >
+                  <ZoomIn className="w-6 h-6" />
+                </button>
+              </div>
+              <button 
+                onClick={() => setViewingImageUrl(null)}
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white backdrop-blur-md"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="w-full h-full flex items-center justify-center overflow-auto p-4 custom-scrollbar">
+              <motion.img
+                src={viewingImageUrl}
+                alt="Zoomed view"
+                style={{ scale: imageZoom }}
+                className="max-w-full max-h-full object-contain transition-transform duration-200 ease-out"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/40 px-4 py-2 rounded-full text-white/60 text-sm font-medium backdrop-blur-sm">
+              滾動或點擊按鈕來縮放圖片
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
