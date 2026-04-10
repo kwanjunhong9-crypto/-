@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   BookOpen, 
@@ -31,7 +31,9 @@ import {
   Medal,
   Package,
   Gift,
-  LayoutGrid
+  LayoutGrid,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework } from './types';
@@ -211,6 +213,7 @@ const TRANSLATIONS = {
     deleteHomework: '刪除功課',
     image: '圖片',
     imageUrl: '圖片網址',
+    uploadImage: '上傳圖片',
     enterAnswer: '請輸入答案',
     teacherAnswer: '老師設定的答案',
     studentPassword: '學生密碼',
@@ -246,7 +249,9 @@ const TRANSLATIONS = {
     rewards: '獎勵已發放',
     toolbox: '工具箱',
     countdown: '倒計時',
-    stage: '階段'
+    stage: '階段',
+    expLeaderboard: '經驗值排行榜',
+    powerLeaderboard: 'Power 排行榜'
   },
   ms: {
     myClasses: 'Kelas Saya',
@@ -302,6 +307,7 @@ const TRANSLATIONS = {
     deleteHomework: 'Padam Kerja Rumah',
     image: 'Imej',
     imageUrl: 'URL Imej',
+    uploadImage: 'Muat Naik Imej',
     enterAnswer: 'Sila masukkan jawapan',
     teacherAnswer: 'Jawapan Guru',
     studentPassword: 'Kata Laluan Pelajar',
@@ -334,7 +340,9 @@ const TRANSLATIONS = {
     bossHp: 'Darah Raksasa',
     damageLeaderboard: 'Papan Pendahulu Kerosakan',
     victory: 'Kemenangan!',
-    rewards: 'Ganjaran telah diberikan'
+    rewards: 'Ganjaran telah diberikan',
+    expLeaderboard: 'Papan Pendahulu EXP',
+    powerLeaderboard: 'Papan Pendahulu Power'
   },
   en: {
     myClasses: 'My Classes',
@@ -390,6 +398,7 @@ const TRANSLATIONS = {
     deleteHomework: 'Delete Homework',
     image: 'Image',
     imageUrl: 'Image URL',
+    uploadImage: 'Upload Image',
     enterAnswer: 'Please enter answer',
     teacherAnswer: 'Teacher\'s Answer',
     studentPassword: 'Student Password',
@@ -422,7 +431,9 @@ const TRANSLATIONS = {
     bossHp: 'Boss HP',
     damageLeaderboard: 'Damage Leaderboard',
     victory: 'Victory!',
-    rewards: 'Rewards distributed'
+    rewards: 'Rewards distributed',
+    expLeaderboard: 'EXP Leaderboard',
+    powerLeaderboard: 'Power Leaderboard'
   }
 };
 
@@ -495,6 +506,10 @@ export default function App() {
   const [timerEditMode, setTimerEditMode] = useState<'h' | 'm' | 's' | null>(null);
   const [showTimeUp, setShowTimeUp] = useState(false);
 
+  const [leaderboardTab, setLeaderboardTab] = useState<'exp' | 'power'>('exp');
+
+  const homeworkFileInputRef = useRef<HTMLInputElement>(null);
+
   // Timer Logic
   const playBellSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1011/1011-preview.mp3');
@@ -529,6 +544,7 @@ export default function App() {
   const t = TRANSLATIONS[language];
 
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Auth State Listener
   useEffect(() => {
@@ -745,9 +761,30 @@ export default function App() {
     playSound('error');
   };
 
+  const handleHomeworkImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 1MB for Firestore)
+    if (file.size > 1024 * 1024) {
+      alert('圖片太大了！請選擇小於 1MB 的圖片。');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setNewHomework({ ...newHomework, imageUrl: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleGoogleLogin = async () => {
+    if (isLoggingIn) return;
+    
     setLoginError(null);
     setHasExited(false);
+    setIsLoggingIn(true);
+    
     try {
       const provider = new GoogleAuthProvider();
       // Force account selection to ensure users can switch accounts if they want
@@ -757,9 +794,16 @@ export default function App() {
       console.error('Login failed', error);
       if (error.code === 'auth/popup-blocked') {
         setLoginError('登入視窗被攔截了！請點擊右上角的「在新分頁開啟」按鈕，或允許此網站彈出視窗。');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // This happens if multiple popups are requested, we can ignore it or show a subtle message
+        console.warn('Multiple login requests detected, previous one cancelled.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setLoginError('您關閉了登入視窗，請再試一次。');
       } else {
         setLoginError('登入失敗，請稍後再試。');
       }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -947,9 +991,12 @@ export default function App() {
           </div>
           <button 
             onClick={user ? handleExit : handleGoogleLogin}
-            className="flex items-center gap-2 bg-white px-6 py-3 rounded-2xl font-bold text-[#2D3436] shadow-sm hover:shadow-md transition-all border border-[#E1E4E8] active:scale-95"
+            disabled={isLoggingIn}
+            className={`flex items-center gap-2 bg-white px-6 py-3 rounded-2xl font-bold text-[#2D3436] shadow-sm hover:shadow-md transition-all border border-[#E1E4E8] active:scale-95 ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {user ? (
+            {isLoggingIn ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[#00B894]"></div>
+            ) : user ? (
               <>
                 <LogOut className="w-4 h-4 text-[#D63031]" />
                 <span>{t.logout}</span>
@@ -962,6 +1009,19 @@ export default function App() {
             )}
           </button>
         </div>
+
+        {/* Error Message */}
+        {loginError && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-24 right-8 z-20 bg-[#D63031] text-white px-6 py-3 rounded-2xl shadow-lg text-sm font-bold flex items-center gap-2 max-w-xs"
+          >
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center shrink-0">!</div>
+            {loginError}
+            <button onClick={() => setLoginError(null)} className="ml-auto hover:opacity-70">✕</button>
+          </motion.div>
+        )}
 
         {/* Student Login Section - Prominent at the top */}
         <div className="max-w-md w-full mx-auto z-20 mt-12 mb-8">
@@ -2074,19 +2134,53 @@ export default function App() {
             className="max-w-2xl mx-auto"
           >
             <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
-              <div className="p-8 bg-[#6C5CE7] text-white text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
+              <div className="p-8 bg-[#6C5CE7] text-white text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md relative z-10">
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-2xl font-black">能量排行榜</h2>
-                <p className="text-white/70 text-sm font-bold mt-1">誰的寵物最強大？</p>
+                <h2 className="text-2xl font-black relative z-10">
+                  {leaderboardTab === 'exp' ? t.expLeaderboard : t.powerLeaderboard}
+                </h2>
+                <p className="text-white/70 text-sm font-bold mt-1 relative z-10">
+                  {leaderboardTab === 'exp' ? '誰是班級的學習之星？' : '誰的寵物最強大？'}
+                </p>
+
+                {/* Tab Switcher */}
+                <div className="flex gap-2 mt-6 p-1 bg-black/10 backdrop-blur-sm rounded-2xl relative z-10 max-w-xs mx-auto">
+                  <button
+                    onClick={() => setLeaderboardTab('exp')}
+                    className={`flex-1 py-2 rounded-xl font-black text-xs transition-all ${
+                      leaderboardTab === 'exp' 
+                        ? 'bg-white text-[#6C5CE7] shadow-lg' 
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {t.expLeaderboard}
+                  </button>
+                  <button
+                    onClick={() => setLeaderboardTab('power')}
+                    className={`flex-1 py-2 rounded-xl font-black text-xs transition-all ${
+                      leaderboardTab === 'power' 
+                        ? 'bg-white text-[#6C5CE7] shadow-lg' 
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {t.powerLeaderboard}
+                  </button>
+                </div>
               </div>
 
               <div className="p-4 sm:p-8">
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {students
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {[...students]
                     .map(s => ({ ...s, power: getPetPower(s) }))
-                    .sort((a, b) => b.power - a.power || b.points - a.points)
+                    .sort((a, b) => {
+                      if (leaderboardTab === 'exp') {
+                        return (b.points || 0) - (a.points || 0);
+                      }
+                      return b.power - a.power || (b.points || 0) - (a.points || 0);
+                    })
                     .map((student, index) => (
                       <motion.div
                         key={student.id}
@@ -2105,17 +2199,18 @@ export default function App() {
                           )}
                         </div>
                         
-                        <div className="relative">
-                          <img 
-                            src={student.avatar} 
-                            alt={student.name}
-                            className="w-12 h-12 rounded-2xl bg-white shadow-sm"
-                            referrerPolicy="no-referrer"
-                          />
-                          {student.equippedPet !== null && (
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg shadow-md flex items-center justify-center text-sm">
+                        <div className="relative w-12 h-12 rounded-2xl bg-[#F1F3F5] flex items-center justify-center overflow-hidden shadow-sm">
+                          {student.equippedPet !== null ? (
+                            <span className="text-2xl">
                               {getPetEmoji(student.equippedPet)}
-                            </div>
+                            </span>
+                          ) : (
+                            <img 
+                              src={student.avatar} 
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
                           )}
                         </div>
 
@@ -2142,10 +2237,10 @@ export default function App() {
 
                         <div className="text-right">
                           <div className="text-xl font-black text-[#6C5CE7]">
-                            {student.power}
+                            {leaderboardTab === 'exp' ? (student.points || 0) * 10 : student.power}
                           </div>
                           <div className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">
-                            能量
+                            {leaderboardTab === 'exp' ? 'EXP' : '能量'}
                           </div>
                         </div>
                       </motion.div>
@@ -2227,6 +2322,15 @@ export default function App() {
                                     }`}>
                                       {index + 1}
                                     </span>
+                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                                      {student?.equippedPet !== null ? (
+                                        <span className="text-xl">
+                                          {getPetEmoji(student?.equippedPet)}
+                                        </span>
+                                      ) : (
+                                        <img src={student?.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                      )}
+                                    </div>
                                     <span className="font-bold">{student?.name}</span>
                                   </div>
                                   <div className="flex items-center gap-4">
@@ -2298,17 +2402,18 @@ export default function App() {
                       disabled={isBossDefeated}
                       className="bg-white p-4 rounded-3xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                     >
-                      <div className="relative w-16 h-16 mx-auto mb-3">
-                        <img 
-                          src={student.avatar} 
-                          alt={student.name}
-                          className="w-full h-full rounded-2xl bg-[#F8F9FA] object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        {student.equippedPet !== null && (
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg shadow-md flex items-center justify-center text-sm">
+                      <div className="relative w-16 h-16 mx-auto mb-3 bg-[#F1F3F5] rounded-2xl flex items-center justify-center overflow-hidden shadow-sm">
+                        {student.equippedPet !== null ? (
+                          <span className="text-3xl">
                             {getPetEmoji(student.equippedPet)}
-                          </div>
+                          </span>
+                        ) : (
+                          <img 
+                            src={student.avatar} 
+                            alt={student.name}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
                         )}
                       </div>
                       <p className="font-bold text-sm text-[#2D3436] truncate">{student.name}</p>
@@ -2363,7 +2468,15 @@ export default function App() {
                 {students.sort((a, b) => b.points - a.points).map((student, index) => (
                   <div key={student.id} className="flex items-center gap-4 p-4 hover:bg-[#F8F9FA] rounded-2xl transition-colors">
                     <span className="w-8 font-black text-[#B2BEC3]">#{index + 1}</span>
-                    <img src={student.avatar} alt="" className="w-10 h-10 rounded-full bg-[#F1F3F5]" referrerPolicy="no-referrer" />
+                    <div className="w-10 h-10 rounded-xl bg-[#F1F3F5] flex items-center justify-center overflow-hidden">
+                      {student.equippedPet !== null ? (
+                        <span className="text-xl">
+                          {getPetEmoji(student.equippedPet)}
+                        </span>
+                      ) : (
+                        <img src={student.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      )}
+                    </div>
                     <span className="flex-1 font-bold">{student.name}</span>
                     <div className="flex items-center gap-6">
                       <div className="flex flex-col items-end">
@@ -3291,14 +3404,34 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.imageUrl} (選填)</label>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.image} (選填)</label>
                       <input 
-                        type="text"
-                        value={newHomework.imageUrl}
-                        onChange={(e) => setNewHomework({...newHomework, imageUrl: e.target.value})}
-                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
-                        placeholder="https://..."
+                        type="file"
+                        ref={homeworkFileInputRef}
+                        onChange={handleHomeworkImageUpload}
+                        accept="image/*"
+                        className="hidden"
                       />
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => homeworkFileInputRef.current?.click()}
+                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none border-2 border-dashed border-[#E1E4E8] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 transition-all flex items-center justify-center gap-2 text-[#636E72] hover:text-[#6C5CE7]"
+                        >
+                          <Upload className="w-5 h-5" />
+                          {t.uploadImage}
+                        </button>
+                        {newHomework.imageUrl && (
+                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#6C5CE7] shrink-0">
+                            <img src={newHomework.imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                            <button 
+                              onClick={() => setNewHomework({ ...newHomework, imageUrl: '' })}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.teacherAnswer}</label>
