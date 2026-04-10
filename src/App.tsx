@@ -23,7 +23,6 @@ import {
   Globe,
   Pencil,
   Trash2,
-  Menu,
   Languages,
   Volume2,
   CheckCircle2,
@@ -31,7 +30,8 @@ import {
   ChevronRight,
   Medal,
   Package,
-  Gift
+  Gift,
+  LayoutGrid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework } from './types';
@@ -234,7 +234,19 @@ const TRANSLATIONS = {
     chestRewards: '寶箱獎勵',
     probability: '機率',
     notEnoughMedals: '獎章不足',
-    chestLevel: '等級'
+    chestLevel: '等級',
+    bossBattle: '打怪獸',
+    simple: '簡單',
+    medium: '中等',
+    hard: '困難',
+    demon: '惡魔',
+    bossHp: '怪獸血量',
+    damageLeaderboard: '傷害排行榜',
+    victory: '戰鬥勝利！',
+    rewards: '獎勵已發放',
+    toolbox: '工具箱',
+    countdown: '倒計時',
+    stage: '階段'
   },
   ms: {
     myClasses: 'Kelas Saya',
@@ -313,7 +325,16 @@ const TRANSLATIONS = {
     chestRewards: 'Ganjaran Peti',
     probability: 'Kebarangkalian',
     notEnoughMedals: 'Pingat tidak mencukupi',
-    chestLevel: 'Tahap'
+    chestLevel: 'Tahap',
+    bossBattle: 'Lawan Raksasa',
+    simple: 'Mudah',
+    medium: 'Sederhana',
+    hard: 'Sukar',
+    demon: 'Iblis',
+    bossHp: 'Darah Raksasa',
+    damageLeaderboard: 'Papan Pendahulu Kerosakan',
+    victory: 'Kemenangan!',
+    rewards: 'Ganjaran telah diberikan'
   },
   en: {
     myClasses: 'My Classes',
@@ -392,7 +413,16 @@ const TRANSLATIONS = {
     chestRewards: 'Chest Rewards',
     probability: 'Probability',
     notEnoughMedals: 'Not enough medals',
-    chestLevel: 'Level'
+    chestLevel: 'Level',
+    bossBattle: 'Boss Battle',
+    simple: 'Simple',
+    medium: 'Medium',
+    hard: 'Hard',
+    demon: 'Demon',
+    bossHp: 'Boss HP',
+    damageLeaderboard: 'Damage Leaderboard',
+    victory: 'Victory!',
+    rewards: 'Rewards distributed'
   }
 };
 
@@ -402,7 +432,7 @@ export default function App() {
   const [view, setView] = useState<'landing' | 'createClass' | 'app'>('landing');
   const [isGuest, setIsGuest] = useState(false);
   const [className, setClassName] = useState('');
-  const [activeTab, setActiveTab] = useState<'classroom' | 'story' | 'reports' | 'leaderboard'>('classroom');
+  const [activeTab, setActiveTab] = useState<'classroom' | 'story' | 'reports' | 'leaderboard' | 'boss'>('classroom');
   const [modalTab, setModalTab] = useState<'positive' | 'needsWork'>('positive');
   const [powerModalStudent, setPowerModalStudent] = useState<Student | null>(null);
   const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
@@ -433,6 +463,7 @@ export default function App() {
     answer: '',
     coinsReward: 10,
     expReward: 10,
+    medalsReward: 0,
     imageUrl: '',
     expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
   });
@@ -449,11 +480,18 @@ export default function App() {
   const [isChestModalOpen, setIsChestModalOpen] = useState(false);
   const [chestReward, setChestReward] = useState<{amount: number, level: number} | null>(null);
 
-  // Timer & Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Boss Battle State
+  const [bossDifficulty, setBossDifficulty] = useState<'simple' | 'medium' | 'hard' | 'demon' | null>(null);
+  const [bossHp, setBossHp] = useState(0);
+  const [maxBossHp, setMaxBossHp] = useState(0);
+  const [damageDealt, setDamageDealt] = useState<{[studentId: string]: number}>({});
+  const [isBossDefeated, setIsBossDefeated] = useState(false);
+
+  // Timer & Toolbox State
   const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isToolboxOpen, setIsToolboxOpen] = useState(false);
   const [timerEditMode, setTimerEditMode] = useState<'h' | 'm' | 's' | null>(null);
   const [showTimeUp, setShowTimeUp] = useState(false);
 
@@ -686,7 +724,7 @@ export default function App() {
             setIsTeacher(false);
             setSelectedStudent(student);
             setStudentLoginPassword('');
-            setIsSidebarOpen(false);
+            setIsToolboxOpen(false);
             playSound('success');
             setView('app');
             return;
@@ -1219,6 +1257,80 @@ export default function App() {
     playSound('power');
   };
 
+  const startBossBattle = (difficulty: 'simple' | 'medium' | 'hard' | 'demon') => {
+    const hpMap = {
+      simple: 3500,
+      medium: 5000,
+      hard: 8800,
+      demon: 12500
+    };
+    setBossDifficulty(difficulty);
+    setBossHp(hpMap[difficulty]);
+    setMaxBossHp(hpMap[difficulty]);
+    setDamageDealt({});
+    setIsBossDefeated(false);
+    playSound('power');
+  };
+
+  const handleAttackBoss = (student: Student) => {
+    if (isBossDefeated || bossHp <= 0) return;
+
+    const power = getPetPower(student);
+    if (power <= 0) {
+      playSound('error');
+      return;
+    }
+
+    const newHp = Math.max(0, bossHp - power);
+    setBossHp(newHp);
+    
+    const currentDamage = (damageDealt[student.id] || 0) + power;
+    const updatedDamageDealt = {
+      ...damageDealt,
+      [student.id]: currentDamage
+    };
+    
+    setDamageDealt(updatedDamageDealt);
+
+    playSound('success');
+
+    if (newHp === 0) {
+      setIsBossDefeated(true);
+      distributeBossRewards(updatedDamageDealt);
+    }
+  };
+
+  const distributeBossRewards = async (finalDamage: Record<string, number>) => {
+    // Sort students by damage
+    const sortedDamage = Object.entries(finalDamage)
+      .sort((a, b) => (b[1] as number) - (a[1] as number));
+
+    const newStudents = students.map(s => {
+      const rankIndex = sortedDamage.findIndex(([id]) => id === s.id);
+      
+      let medalReward = 0;
+      let coinReward = 0;
+
+      if (rankIndex === 0) medalReward = 3;
+      else if (rankIndex === 1) medalReward = 2;
+      else if (rankIndex === 2) medalReward = 1;
+      else if (finalDamage[s.id] > 0) coinReward = 50;
+
+      if (medalReward > 0 || coinReward > 0) {
+        return {
+          ...s,
+          medals: (s.medals || 0) + medalReward,
+          coins: (s.coins || 0) + coinReward
+        };
+      }
+      return s;
+    });
+
+    setStudents(newStudents);
+    await syncStudentsToFirestore(newStudents);
+    playSound('power');
+  };
+
   const getPetEmoji = (petId: number | null | undefined) => {
     if (petId === null || petId === undefined) return null;
     return PETS.find(p => p.id === petId)?.emoji || null;
@@ -1237,23 +1349,23 @@ export default function App() {
       const newStudents = students.map(s => {
         if (s.id === selectedStudent.id) {
           const newPoints = Math.max(0, s.points + skill.points);
-          const newLevel = Math.floor(newPoints / 10);
-          const currentMaxLevel = s.maxLevelReached || 0;
+          const newStage = Math.floor(newPoints / 30);
+          const currentMaxStage = s.maxLevelReached || 0;
           
-          // If level increased beyond the highest level ever reached, add bonus coins
+          // If stage increased beyond the highest stage ever reached, add bonus coins
           let bonusCoins = 0;
-          let newMaxLevel = currentMaxLevel;
+          let newMaxStage = currentMaxStage;
           
-          if (newLevel > currentMaxLevel) {
-            bonusCoins = (newLevel - currentMaxLevel) * 10;
-            newMaxLevel = newLevel;
+          if (newStage > currentMaxStage) {
+            bonusCoins = (newStage - currentMaxStage) * 30; // Increased bonus for harder stages
+            newMaxStage = newStage;
           }
 
           return { 
             ...s, 
             points: newPoints,
             coins: (s.coins || 0) + bonusCoins,
-            maxLevelReached: newMaxLevel
+            maxLevelReached: newMaxStage
           };
         }
         return s;
@@ -1278,7 +1390,6 @@ export default function App() {
         name: newStudentName.trim(),
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newStudentName.trim()}`,
         points: 0,
-        exp: 0,
         ownedPets: [],
         equippedPet: null,
         coins: 0,
@@ -1405,12 +1516,6 @@ export default function App() {
       <header className="bg-white border-b border-[#E1E4E8] sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors text-[#636E72]"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-[#00B894] rounded-xl flex items-center justify-center shadow-lg shadow-[#00B894]/20">
                 <Users className="text-white w-6 h-6" />
@@ -1421,52 +1526,168 @@ export default function App() {
             </div>
           </div>
           
-          <nav className="flex gap-1 bg-[#F1F3F5] p-1 rounded-xl">
+          <div className="relative">
             <button 
-              onClick={() => setActiveTab('classroom')}
-              className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'classroom' 
-                  ? 'bg-white text-[#00B894] shadow-sm' 
-                  : 'text-[#636E72] hover:text-[#2D3436]'
+              onClick={() => setIsToolboxOpen(!isToolboxOpen)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
+                isToolboxOpen 
+                  ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
+                  : 'bg-white text-[#2D3436] border border-[#E1E4E8] hover:bg-[#F8F9FA]'
               }`}
             >
-              {t.classroom}
+              <LayoutGrid className="w-5 h-5" />
+              <span className="hidden sm:inline">{t.toolbox}</span>
             </button>
-            {(!loggedInStudentId || isTeacher) && (
-              <>
-                <button 
-                  onClick={() => setActiveTab('story')}
-                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                    activeTab === 'story' 
-                      ? 'bg-white text-[#00B894] shadow-sm' 
-                      : 'text-[#636E72] hover:text-[#2D3436]'
-                  }`}
-                >
-                  {t.story}
-                </button>
-                <button 
-                  onClick={() => setActiveTab('reports')}
-                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                    activeTab === 'reports' 
-                      ? 'bg-white text-[#00B894] shadow-sm' 
-                      : 'text-[#636E72] hover:text-[#2D3436]'
-                  }`}
-                >
-                  {t.reports}
-                </button>
-                <button 
-                  onClick={() => setActiveTab('leaderboard')}
-                  className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-                    activeTab === 'leaderboard' 
-                      ? 'bg-white text-[#00B894] shadow-sm' 
-                      : 'text-[#636E72] hover:text-[#2D3436]'
-                  }`}
-                >
-                  {t.leaderboard}
-                </button>
-              </>
-            )}
-          </nav>
+
+            <AnimatePresence>
+              {isToolboxOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsToolboxOpen(false)} 
+                  />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto w-64 bg-white rounded-2xl shadow-xl border border-[#E1E4E8] py-2 z-50 overflow-hidden"
+                    >
+                      {/* Login/Profile Section */}
+                      <div className="px-2 mb-2">
+                        {!isTeacher && !loggedInStudentId && (
+                          <div className="p-3 bg-[#F8F9FA] rounded-xl border border-[#E1E4E8]">
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <input 
+                                  type="password"
+                                  maxLength={6}
+                                  value={studentLoginPassword}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setStudentLoginPassword(val);
+                                  }}
+                                  placeholder="密碼"
+                                  className="w-full bg-white border border-[#E1E4E8] rounded-lg px-2 py-1.5 text-sm font-bold text-center tracking-widest outline-none focus:border-[#6C5CE7]"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleStudentLogin(studentLoginPassword)}
+                                disabled={studentLoginPassword.length !== 6}
+                                className="bg-[#0984E3] text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-[#0773C5] disabled:opacity-50"
+                              >
+                                登入
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {loggedInStudentId && (
+                          <div className="p-3 bg-[#00B894]/5 rounded-xl border border-[#00B894]/10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <img 
+                                src={students.find(s => s.id === loggedInStudentId)?.avatar} 
+                                className="w-8 h-8 rounded-lg bg-white shadow-sm" 
+                                alt="" 
+                              />
+                              <span className="text-sm font-bold text-[#2D3436]">
+                                {students.find(s => s.id === loggedInStudentId)?.name}
+                              </span>
+                            </div>
+                            <button 
+                              onClick={handleStudentLogout}
+                              className="p-1.5 hover:bg-[#D63031]/10 rounded-lg text-[#D63031]"
+                            >
+                              <LogOut className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="h-px bg-[#E1E4E8] mx-2 mb-2" />
+
+                      <button 
+                        onClick={() => { setActiveTab('classroom'); setIsToolboxOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
+                      >
+                        <Users className="w-4 h-4" />
+                        {t.classroom}
+                      </button>
+                      
+                      {(!loggedInStudentId || isTeacher) && (
+                        <>
+                          <button 
+                            onClick={() => { setActiveTab('story'); setIsToolboxOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            }`}
+                          >
+                            <BookOpen className="w-4 h-4" />
+                            {t.story}
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab('reports'); setIsToolboxOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            }`}
+                          >
+                            <Award className="w-4 h-4" />
+                            {t.reports}
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab('leaderboard'); setIsToolboxOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            }`}
+                          >
+                            <Trophy className="w-4 h-4" />
+                            {t.leaderboard}
+                          </button>
+                          {isTeacher && !loggedInStudentId && (
+                            <button 
+                              onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                                activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              }`}
+                            >
+                              <Zap className="w-4 h-4" />
+                              {t.bossBattle}
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      <div className="h-px bg-[#E1E4E8] mx-2 my-2" />
+
+                      {(!loggedInStudentId || isTeacher) && (
+                        <button 
+                          onClick={() => {
+                            setIsTimerModalOpen(true);
+                            setIsToolboxOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA]"
+                        >
+                          <Clock className="w-4 h-4 text-[#00B894]" />
+                          {t.countdown}
+                        </button>
+                      )}
+
+                      <button 
+                        onClick={() => {
+                          setIsHomeworkModalOpen(true);
+                          setIsToolboxOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA]"
+                      >
+                        <BookOpen className="w-4 h-4 text-[#6C5CE7]" />
+                        {t.homework}
+                      </button>
+                    </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           <div className="flex items-center gap-4">
             {loggedInStudentId && (
@@ -1584,23 +1805,23 @@ export default function App() {
             )}
 
             {students.map((student) => {
-              const level = Math.floor(student.points / 10);
+              const stage = Math.floor(student.points / 30);
               const isSelf = loggedInStudentId === student.id;
               const canClick = loggedInStudentId ? isSelf : isTeacher;
               
               let borderColor = 'border-[#E1E4E8]';
               let hoverBorderColor = 'hover:border-[#00B894]/30';
               
-              if (level >= 1 && level <= 20) {
+              if (stage >= 1 && stage <= 20) {
                 borderColor = 'border-[#74b9ff]'; // Blue
                 hoverBorderColor = 'hover:border-[#0984e3]';
-              } else if (level >= 21 && level <= 30) {
+              } else if (stage >= 21 && stage <= 30) {
                 borderColor = 'border-[#ffeaa7]'; // Yellow
                 hoverBorderColor = 'hover:border-[#d6a01e]';
-              } else if (level >= 31 && level <= 40) {
+              } else if (stage >= 31 && stage <= 40) {
                 borderColor = 'border-[#a29bfe]'; // Purple
                 hoverBorderColor = 'hover:border-[#6c5ce7]';
-              } else if (level > 40) {
+              } else if (stage > 40) {
                 borderColor = 'border-[#fab1a0]'; // Red/Orange for higher levels
                 hoverBorderColor = 'hover:border-[#e17055]';
               }
@@ -1665,6 +1886,14 @@ export default function App() {
                       <Zap className="w-6 h-6 text-white opacity-0 group-hover/avatar:opacity-100 transition-opacity drop-shadow-md" />
                     </div>
                   )}
+
+                  {/* Medal Badge */}
+                  {(student.medals || 0) > 0 && (
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-xl shadow-md border border-[#6C5CE7]/20 flex items-center gap-1 z-10 transition-all duration-500">
+                      <Medal className="w-3.5 h-3.5 text-[#6C5CE7] fill-current" />
+                      <span className="text-xs font-black text-[#6C5CE7]">{student.medals}</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="text-center w-full">
@@ -1691,11 +1920,11 @@ export default function App() {
                     </span>
                   </button>
 
-                  {/* Level Pill */}
+                  {/* Stage Pill */}
                   <div className="w-full py-1.5 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-2 border border-[#E1E4E8]/50">
                     <Award className="w-3.5 h-3.5 text-[#0984E3] fill-current" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#636E72]">
-                      {t.level} {Math.floor(student.points / 10)}
+                      {t.stage} {Math.floor((student.points || 0) / 30)}
                     </span>
                   </div>
 
@@ -1734,15 +1963,15 @@ export default function App() {
                 {/* Progress Bar (Experience) */}
                 <div className="w-full px-2 mt-2">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">EXP: {student.exp || 0}</span>
+                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">EXP: {(student.points || 0) * 10}</span>
                     <span className="text-[9px] font-black text-[#00B894] bg-[#00B894]/10 px-1.5 rounded-md">
-                      階段 {Math.floor((student.exp || 0) / 100)}
+                      {t.stage} {Math.floor((student.points || 0) / 30)}
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-[#F1F3F5] rounded-full overflow-hidden border border-[#E1E4E8]/30">
                     <div 
                       className="h-full bg-[#00B894] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(0,184,148,0.4)]" 
-                      style={{ width: `${(((student.exp || 0) % 100) / 100) * 100}%` }}
+                      style={{ width: `${(((student.points || 0) % 30) / 30) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -1854,7 +2083,7 @@ export default function App() {
               </div>
 
               <div className="p-4 sm:p-8">
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                   {students
                     .map(s => ({ ...s, power: getPetPower(s) }))
                     .sort((a, b) => b.power - a.power || b.points - a.points)
@@ -1899,7 +2128,11 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-1 text-[10px] font-black text-[#00B894] uppercase tracking-wider">
                               <Star className="w-3 h-3 fill-current" />
-                              {student.exp || 0} EXP
+                              {(student.points || 0) * 10} EXP
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-[#6C5CE7] uppercase tracking-wider">
+                              <Medal className="w-3 h-3 fill-current" />
+                              {student.medals || 0}
                             </div>
                             <div className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">
                               {(student.ownedPets || []).length} 隻寵物
@@ -1923,6 +2156,180 @@ export default function App() {
           </motion.div>
         )}
 
+        {activeTab === 'boss' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto"
+          >
+            {!bossDifficulty ? (
+              <div className="bg-white rounded-[3rem] p-12 shadow-sm border border-[#E1E4E8] text-center">
+                <h2 className="text-3xl font-black mb-8">{t.bossBattle}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <button 
+                    onClick={() => startBossBattle('simple')}
+                    className="p-8 rounded-[2rem] border-4 border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
+                  >
+                    <div className="text-4xl mb-4">🦖</div>
+                    <div className="text-2xl font-black text-[#00B894]">{t.simple}</div>
+                    <div className="text-[#636E72] font-bold mt-2">HP: 3500</div>
+                  </button>
+                  <button 
+                    onClick={() => startBossBattle('medium')}
+                    className="p-8 rounded-[2rem] border-4 border-[#F1C40F] hover:bg-[#F1C40F]/5 transition-all group"
+                  >
+                    <div className="text-4xl mb-4">🐉</div>
+                    <div className="text-2xl font-black text-[#F1C40F]">{t.medium}</div>
+                    <div className="text-[#636E72] font-bold mt-2">HP: 5000</div>
+                  </button>
+                  <button 
+                    onClick={() => startBossBattle('hard')}
+                    className="p-8 rounded-[2rem] border-4 border-[#E74C3C] hover:bg-[#E74C3C]/5 transition-all group"
+                  >
+                    <div className="text-4xl mb-4">👹</div>
+                    <div className="text-2xl font-black text-[#E74C3C]">{t.hard}</div>
+                    <div className="text-[#636E72] font-bold mt-2">HP: 8800</div>
+                  </button>
+                  <button 
+                    onClick={() => startBossBattle('demon')}
+                    className="p-8 rounded-[2rem] border-4 border-[#9B59B6] hover:bg-[#9B59B6]/5 transition-all group"
+                  >
+                    <div className="text-4xl mb-4">👿</div>
+                    <div className="text-2xl font-black text-[#9B59B6]">{t.demon}</div>
+                    <div className="text-[#636E72] font-bold mt-2">HP: 12500</div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-[#E1E4E8] text-center relative overflow-hidden">
+                  {isBossDefeated && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute inset-0 bg-white/95 backdrop-blur-md z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar"
+                    >
+                      <div className="flex flex-col items-center py-8 w-full max-w-md">
+                        <Trophy className="w-20 h-20 text-[#F1C40F] mb-4 shrink-0" />
+                        <h2 className="text-4xl font-black text-[#2D3436] mb-2">{t.victory}</h2>
+                        <p className="text-[#636E72] font-bold mb-8">{t.rewards}</p>
+                        
+                        <div className="w-full space-y-3 mb-8">
+                          {Object.entries(damageDealt)
+                            .sort((a, b) => (b[1] as number) - (a[1] as number))
+                            .map(([id, damage], index) => {
+                              const student = students.find(s => s.id === id);
+                              return (
+                                <div key={id} className="flex items-center justify-between bg-[#F8F9FA] p-4 rounded-2xl border border-[#E1E4E8]">
+                                  <div className="flex items-center gap-3">
+                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white ${
+                                      index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#DFE6E9] text-[#636E72]'
+                                    }`}>
+                                      {index + 1}
+                                    </span>
+                                    <span className="font-bold">{student?.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <span className="text-xs font-black text-[#636E72]">{damage} DMG</span>
+                                    <div className="flex gap-1">
+                                      {index === 0 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>3</div>}
+                                      {index === 1 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>2</div>}
+                                      {index === 2 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>1</div>}
+                                      {index > 2 && <div className="flex items-center gap-1 text-[#F39C12] font-black text-sm"><Coins className="w-4 h-4 fill-current"/>50</div>}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+
+                        <button 
+                          onClick={() => setBossDifficulty(null)}
+                          className="bg-[#6C5CE7] text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-[#6C5CE7]/20 hover:scale-105 transition-transform shrink-0"
+                        >
+                          {t.save}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <div className="relative inline-block mb-6">
+                    <motion.div 
+                      animate={bossHp > 0 ? { 
+                        y: [0, -10, 0],
+                        rotate: [-1, 1, -1]
+                      } : { scale: 0.8, opacity: 0.5 }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="text-8xl"
+                    >
+                      {bossDifficulty === 'simple' && '🦖'}
+                      {bossDifficulty === 'medium' && '🐉'}
+                      {bossDifficulty === 'hard' && '👹'}
+                      {bossDifficulty === 'demon' && '👿'}
+                    </motion.div>
+                  </div>
+
+                  <div className="max-w-md mx-auto">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-sm font-black text-[#636E72] uppercase tracking-wider">{t.bossHp}</span>
+                      <span className="text-lg font-black text-[#2D3436]">{bossHp} / {maxBossHp}</span>
+                    </div>
+                    <div className="h-6 bg-[#F1F3F5] rounded-full overflow-hidden border-2 border-[#E1E4E8]">
+                      <motion.div 
+                        initial={{ width: '100%' }}
+                        animate={{ width: `${(bossHp / maxBossHp) * 100}%` }}
+                        className={`h-full transition-all duration-500 ${
+                          bossDifficulty === 'simple' ? 'bg-[#00B894]' :
+                          bossDifficulty === 'medium' ? 'bg-[#F1C40F]' :
+                          bossDifficulty === 'hard' ? 'bg-[#E74C3C]' : 'bg-[#9B59B6]'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {students.map(student => (
+                    <motion.button
+                      key={student.id}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleAttackBoss(student)}
+                      disabled={isBossDefeated}
+                      className="bg-white p-4 rounded-3xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                    >
+                      <div className="relative w-16 h-16 mx-auto mb-3">
+                        <img 
+                          src={student.avatar} 
+                          alt={student.name}
+                          className="w-full h-full rounded-2xl bg-[#F8F9FA] object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        {student.equippedPet !== null && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg shadow-md flex items-center justify-center text-sm">
+                            {getPetEmoji(student.equippedPet)}
+                          </div>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm text-[#2D3436] truncate">{student.name}</p>
+                      <div className="mt-2 flex items-center justify-center gap-1 text-[10px] font-black text-[#6C5CE7] uppercase tracking-wider">
+                        <Zap className="w-3 h-3 fill-current" />
+                        {getPetPower(student)}
+                      </div>
+                      
+                      {damageDealt[student.id] > 0 && (
+                        <div className="absolute top-2 right-2 bg-[#6C5CE7] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full">
+                          {damageDealt[student.id]}
+                        </div>
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {activeTab === 'reports' && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -1940,7 +2347,7 @@ export default function App() {
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
                 <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總經驗值</p>
-                <p className="text-3xl font-black text-[#6C5CE7]">{students.reduce((acc, s) => acc + (s.exp || 0), 0)}</p>
+                <p className="text-3xl font-black text-[#6C5CE7]">{students.reduce((acc, s) => acc + (s.points * 10), 0)}</p>
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
                 <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">學生人數</p>
@@ -1965,7 +2372,11 @@ export default function App() {
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-[#636E72] uppercase">經驗</span>
-                        <span className="font-bold text-[#6C5CE7]">{student.exp || 0}</span>
+                        <span className="font-bold text-[#6C5CE7]">{(student.points || 0) * 10}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-[#636E72] uppercase">獎章</span>
+                        <span className="font-bold text-[#6C5CE7]">{student.medals || 0}</span>
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-[#636E72] uppercase">分數</span>
@@ -2581,123 +2992,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
-            />
-            <motion.div 
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-[70] p-6 flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-black text-[#2D3436]">工具箱</h2>
-                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-[#F1F3F5] rounded-lg">
-                  <X className="w-5 h-5 text-[#636E72]" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* Student Login Input */}
-                {!isTeacher && !loggedInStudentId && (
-                  <div className="p-4 bg-[#F8F9FA] rounded-3xl border border-[#E1E4E8]">
-                    <label className="block text-[10px] font-black text-[#B2BEC3] uppercase tracking-widest mb-2 px-1">
-                      {t.loginAsStudent}
-                    </label>
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <input 
-                          type="password"
-                          maxLength={6}
-                          value={studentLoginPassword}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '');
-                            setStudentLoginPassword(val);
-                          }}
-                          placeholder={t.passwordPlaceholder}
-                          className="w-full bg-white border-2 border-[#E1E4E8] rounded-xl px-4 py-3 font-bold text-center tracking-[0.5em] outline-none focus:border-[#6C5CE7] transition-all"
-                        />
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B2BEC3]" />
-                      </div>
-                      <button
-                        onClick={() => handleStudentLogin(studentLoginPassword)}
-                        disabled={studentLoginPassword.length !== 6}
-                        className="w-full bg-[#0984E3] text-white py-3 rounded-xl font-black hover:bg-[#0773C5] transition-all disabled:opacity-50"
-                      >
-                        進入
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {loggedInStudentId && (
-                  <div className="p-4 bg-[#00B894]/10 rounded-3xl border border-[#00B894]/20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                        <img 
-                          src={students.find(s => s.id === loggedInStudentId)?.avatar} 
-                          className="w-8 h-8" 
-                          alt="" 
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-[#00B894] uppercase tracking-wider">已登入</p>
-                        <p className="text-sm font-bold text-[#2D3436]">
-                          {students.find(s => s.id === loggedInStudentId)?.name}
-                        </p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={handleStudentLogout}
-                      className="p-2 hover:bg-[#D63031]/10 rounded-xl transition-colors text-[#D63031]"
-                    >
-                      <LogOut className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
-
-                {(!loggedInStudentId || isTeacher) && (
-                  <button 
-                    onClick={() => {
-                      setIsTimerModalOpen(true);
-                      setIsSidebarOpen(false);
-                    }}
-                    className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
-                  >
-                    <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Clock className="w-6 h-6 text-[#00B894]" />
-                    </div>
-                    <span className="font-bold text-[#2D3436]">倒計時</span>
-                  </button>
-                )}
-
-                <button 
-                  onClick={() => {
-                    setIsHomeworkModalOpen(true);
-                    setIsSidebarOpen(false);
-                  }}
-                  className="w-full flex flex-col items-center gap-2 p-6 rounded-3xl border-2 border-[#F1F3F5] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 transition-all group"
-                >
-                  <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-6 h-6 text-[#6C5CE7]" />
-                  </div>
-                  <span className="font-bold text-[#2D3436]">{t.homework}</span>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* Timer Modal */}
       <AnimatePresence>
         {isTimerModalOpen && (
@@ -3016,7 +3310,7 @@ export default function App() {
                         placeholder="學生輸入此答案即可獲得獎勵"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.coins} {t.reward}</label>
                         <input 
@@ -3032,6 +3326,15 @@ export default function App() {
                           type="number"
                           value={newHomework.expReward}
                           onChange={(e) => setNewHomework({...newHomework, expReward: parseInt(e.target.value)})}
+                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.medals} {t.reward}</label>
+                        <input 
+                          type="number"
+                          value={newHomework.medalsReward}
+                          onChange={(e) => setNewHomework({...newHomework, medalsReward: parseInt(e.target.value)})}
                           className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
                         />
                       </div>
@@ -3079,6 +3382,7 @@ export default function App() {
                             answer: newHomework.answer!,
                             coinsReward: newHomework.coinsReward || 0,
                             expReward: newHomework.expReward || 0,
+                            medalsReward: newHomework.medalsReward || 0,
                             imageUrl: newHomework.imageUrl,
                             completedBy: [],
                             expiresAt: newHomework.expiresAt || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
@@ -3172,7 +3476,7 @@ export default function App() {
                               </div>
                               <div className="px-3 py-1 bg-[#6C5CE7]/10 text-[#6C5CE7] rounded-lg text-[10px] font-black border border-[#6C5CE7]/20 flex items-center gap-1.5">
                                 <Medal className="w-3 h-3 fill-current" />
-                                +1 {t.medals}
+                                +{hw.medalsReward || 0} {t.medals}
                               </div>
                             </div>
     
@@ -3215,9 +3519,9 @@ export default function App() {
                                                     if (s.id === loggedInStudentId) {
                                                       return {
                                                         ...s,
-                                                        exp: (s.exp || 0) + hw.expReward,
+                                                        points: (s.points || 0) + Math.floor(hw.expReward / 10),
                                                         coins: (s.coins || 0) + hw.coinsReward,
-                                                        medals: (s.medals || 0) + 1
+                                                        medals: (s.medals || 0) + (hw.medalsReward || 0)
                                                       };
                                                     }
                                                     return s;

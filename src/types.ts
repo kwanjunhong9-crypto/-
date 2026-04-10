@@ -3,7 +3,7 @@ export interface Student {
   name: string;
   avatar: string;
   points: number;
-  exp: number;
+  exp?: number;
   ownedPets: number[]; // Array of pet levels (1: Dog, 2: Cat, 3: Rabbit, 4: Fox)
   equippedPet: number | null; // Currently selected pet level for avatar
   coins: number;
@@ -35,6 +35,7 @@ export interface Homework {
   answer: string;
   coinsReward: number;
   expReward: number;
+  medalsReward: number;
   completedBy: string[]; // Array of student IDs
   expiresAt: string; // ISO date string
 }
