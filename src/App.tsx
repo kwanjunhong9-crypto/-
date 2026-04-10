@@ -2105,7 +2105,7 @@ export default function App() {
                   <img 
                     src={post.imageUrl} 
                     alt="Post content" 
-                    className="w-full aspect-video object-cover"
+                    className="w-full h-auto"
                     referrerPolicy="no-referrer"
                   />
                 )}
@@ -3593,7 +3593,7 @@ export default function App() {
                               <img 
                                 src={hw.imageUrl} 
                                 alt="Homework" 
-                                className="w-full rounded-2xl aspect-video object-cover shadow-sm"
+                                className="w-full rounded-2xl h-auto shadow-sm"
                                 referrerPolicy="no-referrer"
                               />
                             )}
