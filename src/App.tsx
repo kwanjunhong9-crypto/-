@@ -159,10 +159,104 @@ const PETS = [
   { id: 23, tier: 10, emoji: '🦄', name: '彩虹獨角獸', power: 1250, price: 0, isSpecial: true },
 ];
 
-type Language = 'zh' | 'ms' | 'en';
+type Language = 'zh-Hans' | 'zh-Hant' | 'ms' | 'en';
 
 const TRANSLATIONS = {
-  zh: {
+  'zh-Hans': {
+    myClasses: '我的班级',
+    newClass: '新班级',
+    students: '学生',
+    exit: '退出',
+    logout: '登出',
+    login: '登录',
+    classroom: '班级',
+    story: '故事',
+    reports: '报告',
+    leaderboard: '排行榜',
+    addStudent: '添加新学生',
+    editStudent: '修改学生资料',
+    studentName: '学生姓名',
+    cancel: '取消',
+    save: '保存',
+    delete: '删除',
+    positive: '加分',
+    needsWork: '扣分',
+    feedbackFor: '的反馈',
+    start: '开始使用',
+    guestMode: '游客模式',
+    guestWarning: '注意：没有登录的人不能暂存班级',
+    tagline: '最简单、最有趣的课堂管理工具',
+    language: '语言',
+    saveChanges: '保存修改',
+    addStudentBtn: '添加学生',
+    pointsUnit: '分',
+    level: '等级',
+    energy: '能量',
+    energyUnit: '能量',
+    postPlaceholder: '班级里发生了什么新鲜事？',
+    photo: '照片',
+    file: '文件',
+    posting: '发布中...',
+    post: '发布',
+    likes: '赞',
+    comments: '评论',
+    homework: '作业',
+    homeworkTitle: '班级作业',
+    addHomework: '添加作业',
+    question: '题目',
+    answer: '答案',
+    coins: '金币',
+    exp: '经验值',
+    submit: '提交',
+    correct: '回答正确！',
+    wrong: '回答错误，再试一次！',
+    reward: '奖励',
+    noHomework: '目前没有作业',
+    editHomework: '修改作业',
+    deleteHomework: '删除作业',
+    image: '图片',
+    imageUrl: '图片网址',
+    uploadImage: '上传图片',
+    enterAnswer: '请输入答案',
+    teacherAnswer: '老师设定的答案',
+    studentPassword: '学生密码',
+    enterPassword: '请输入6位数密码',
+    loginAsStudent: '学生登录',
+    passwordError: '密码错误',
+    setStudentPassword: '设定学生密码',
+    passwordPlaceholder: '6位数字',
+    onlyOwnProfile: '你只能查看自己的个人资料',
+    teacherOnly: '只有老师可以执行此操作',
+    expiryTime: '截止时间',
+    oneDay: '1 天',
+    twoDays: '2 天',
+    threeDays: '3 天',
+    oneWeek: '1 周',
+    expiresIn: '剩余时间',
+    expired: '已截止',
+    chest: '宝箱',
+    openChest: '开启宝箱',
+    medals: '奖章',
+    chestRewards: '宝箱奖励',
+    probability: '概率',
+    notEnoughMedals: '奖章不足',
+    chestLevel: '等级',
+    bossBattle: '打怪兽',
+    simple: '简单',
+    medium: '中等',
+    hard: '困难',
+    demon: '恶魔',
+    bossHp: '怪兽血量',
+    damageLeaderboard: '伤害排行榜',
+    victory: '战斗胜利！',
+    rewards: '奖励已发放',
+    toolbox: '工具箱',
+    countdown: '倒计时',
+    stage: '阶段',
+    expLeaderboard: '经验值排行榜',
+    powerLeaderboard: 'Power 排行榜'
+  },
+  'zh-Hant': {
     myClasses: '我的班級',
     newClass: '新班級',
     students: '學生',
@@ -459,7 +553,7 @@ export default function App() {
   const [newPostContent, setNewPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [hasExited, setHasExited] = useState(false);
-  const [language, setLanguage] = useState<Language>('zh');
+  const [language, setLanguage] = useState<Language>('zh-Hant');
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [coinsModalStudent, setCoinsModalStudent] = useState<Student | null>(null);
   const [powerModalMode, setPowerModalMode] = useState<'pet' | 'avatar'>('pet');
@@ -510,6 +604,8 @@ export default function App() {
   const [showTimeUp, setShowTimeUp] = useState(false);
 
   const [leaderboardTab, setLeaderboardTab] = useState<'exp' | 'power'>('exp');
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editingClassName, setEditingClassName] = useState('');
 
   const homeworkFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -847,6 +943,8 @@ export default function App() {
         await signOut(auth);
         setIsGuest(false);
         setClassName('');
+        setEditingClassId(null);
+        setEditingClassName('');
         setStudents(INITIAL_STUDENTS);
         localStorage.removeItem('dojo_class_name');
         localStorage.removeItem('dojo_students');
@@ -892,10 +990,16 @@ export default function App() {
                   {t.language}
                 </div>
                 <button 
-                  onClick={() => { setLanguage('zh'); setIsLangMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F1F3F5]'}`}
+                  onClick={() => { setLanguage('zh-Hans'); setIsLangMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh-Hans' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F1F3F5]'}`}
                 >
-                  華文 (Chinese)
+                  華文（簡體）
+                </button>
+                <button 
+                  onClick={() => { setLanguage('zh-Hant'); setIsLangMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh-Hant' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F1F3F5]'}`}
+                >
+                  華文（繁體）
                 </button>
                 <button 
                   onClick={() => { setLanguage('ms'); setIsLangMenuOpen(false); }}
@@ -951,6 +1055,25 @@ export default function App() {
       } catch (error) {
         console.error('Failed to sync students', error);
       }
+    }
+  };
+
+  const handleRenameClass = async (e: React.MouseEvent | React.FormEvent, classId: string) => {
+    e.stopPropagation();
+    if (!editingClassName.trim()) {
+      setEditingClassId(null);
+      return;
+    }
+
+    try {
+      const classRef = doc(db, 'classes', classId);
+      await updateDoc(classRef, { name: editingClassName.trim() });
+      setEditingClassId(null);
+      setEditingClassName('');
+      playSound('success');
+    } catch (error) {
+      console.error('Failed to rename class', error);
+      alert('重新命名失敗');
     }
   };
 
@@ -1115,7 +1238,20 @@ export default function App() {
                   }}
                   className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative border-2 border-[#00B894]/20"
                 >
-                  <div className="absolute top-6 right-6">
+                  <div className="absolute top-6 right-6 flex gap-2">
+                    {isTeacher && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingClassId(cls.id);
+                          setEditingClassName(cls.name);
+                        }}
+                        className="p-2 bg-[#F1F3F5] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] text-[#636E72]"
+                        title="重新命名"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
                     <Crown className="w-5 h-5 text-[#F1C40F]" />
                   </div>
                   
@@ -1123,7 +1259,37 @@ export default function App() {
                     <div className="w-20 h-20 bg-[#00B894]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                       <Globe className="w-10 h-10 text-[#00B894]" />
                     </div>
-                    <h3 className="text-lg font-black text-[#2D3436] mb-2">{cls.name}</h3>
+                    {editingClassId === cls.id ? (
+                      <div className="flex flex-col gap-2 w-full" onClick={e => e.stopPropagation()}>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={editingClassName}
+                          onChange={(e) => setEditingClassName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameClass(e, cls.id);
+                            if (e.key === 'Escape') setEditingClassId(null);
+                          }}
+                          className="w-full bg-[#F1F3F5] border-2 border-[#00B894] rounded-xl px-3 py-2 text-sm font-bold text-center outline-none"
+                        />
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={(e) => handleRenameClass(e, cls.id)}
+                            className="bg-[#00B894] text-white px-3 py-1 rounded-lg text-xs font-black"
+                          >
+                            儲存
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingClassId(null); }}
+                            className="bg-[#DFE6E9] text-[#636E72] px-3 py-1 rounded-lg text-xs font-black"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <h3 className="text-lg font-black text-[#2D3436] mb-2">{cls.name}</h3>
+                    )}
                   </div>
                 </motion.div>
               ))}
