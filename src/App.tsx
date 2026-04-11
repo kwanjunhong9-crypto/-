@@ -69,34 +69,33 @@ const CHESTS = [
     level: 1,
     cost: 3,
     rewards: [
-      { amount: 30, weight: 75 },
-      { amount: 100, weight: 15 },
-      { amount: 120, weight: 5 },
-      { amount: 200, weight: 4 },
-      { amount: 250, weight: 1 },
+      { amount: 30, weight: 75, type: 'coins' },
+      { amount: 100, weight: 15, type: 'coins' },
+      { amount: 120, weight: 5, type: 'coins' },
+      { amount: 200, weight: 4, type: 'coins' },
+      { amount: 250, weight: 1, type: 'coins' },
     ]
   },
   {
     level: 2,
     cost: 6,
     rewards: [
-      { amount: 100, weight: 50 },
-      { amount: 150, weight: 25 },
-      { amount: 200, weight: 7 },
-      { amount: 210, weight: 6 },
-      { amount: 230, weight: 5 },
-      { amount: 300, weight: 4 },
-      { amount: 350, weight: 3 },
+      { amount: 50, weight: 75, type: 'coins' },
+      { amount: 120, weight: 15, type: 'coins' },
+      { amount: 150, weight: 5, type: 'coins' },
+      { amount: 220, weight: 4, type: 'coins' },
+      { amount: 300, weight: 1, type: 'coins' },
     ]
   },
   {
     level: 3,
     cost: 9,
     rewards: [
-      { amount: 300, weight: 50 },
-      { amount: 500, weight: 30 },
-      { amount: 800, weight: 15 },
-      { amount: 1000, weight: 5 },
+      { amount: 75, weight: 75, type: 'coins' },
+      { amount: 150, weight: 15, type: 'coins' },
+      { amount: 175, weight: 5, type: 'coins' },
+      { amount: 250, weight: 4, type: 'coins' },
+      { petId: 23, weight: 1, type: 'pet' },
     ]
   }
 ];
@@ -157,6 +156,7 @@ const PETS = [
   // Tier 10
   { id: 21, tier: 10, emoji: '👑', name: '王者', power: 750, price: 350 },
   { id: 22, tier: 10, emoji: '💎', name: '鑽石', power: 999, price: 500 },
+  { id: 23, tier: 10, emoji: '🦄', name: '彩虹獨角獸', power: 1250, price: 0, isSpecial: true },
 ];
 
 type Language = 'zh' | 'ms' | 'en';
@@ -492,7 +492,7 @@ export default function App() {
   const [tempStudentPassword, setTempStudentPassword] = useState('');
 
   const [isChestModalOpen, setIsChestModalOpen] = useState(false);
-  const [chestReward, setChestReward] = useState<{amount: number, level: number} | null>(null);
+  const [chestReward, setChestReward] = useState<{amount?: number, petId?: number, level: number} | null>(null);
 
   // Boss Battle State
   const [bossDifficulty, setBossDifficulty] = useState<'simple' | 'medium' | 'hard' | 'demon' | null>(null);
@@ -1330,10 +1330,15 @@ export default function App() {
     // Update student
     const newStudents = students.map(s => {
       if (s.id === loggedInStudentId) {
+        const updatedOwnedPets = selectedReward.type === 'pet' && selectedReward.petId 
+          ? Array.from(new Set([...(s.ownedPets || []), selectedReward.petId]))
+          : s.ownedPets;
+
         return {
           ...s,
           medals: s.medals - chest.cost,
-          coins: (s.coins || 0) + selectedReward.amount
+          coins: (s.coins || 0) + (selectedReward.type === 'coins' ? (selectedReward.amount || 0) : 0),
+          ownedPets: updatedOwnedPets
         };
       }
       return s;
@@ -1341,7 +1346,12 @@ export default function App() {
 
     setStudents(newStudents);
     syncStudentsToFirestore(newStudents);
-    setChestReward({ amount: selectedReward.amount, level: chestLevel });
+    
+    if (selectedReward.type === 'pet') {
+      setChestReward({ petId: selectedReward.petId, level: chestLevel });
+    } else {
+      setChestReward({ amount: selectedReward.amount, level: chestLevel });
+    }
     playSound('power');
   };
 
@@ -1813,15 +1823,6 @@ export default function App() {
                 </>
               )}
             </div>
-            {isTeacher && !loggedInStudentId && (
-              <button 
-                onClick={() => setIsAddingStudent(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B894] text-white hover:bg-[#00A383] transition-colors shadow-sm font-bold text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t.addStudentBtn}</span>
-              </button>
-            )}
             {(!loggedInStudentId || isTeacher) && (
               <button 
                 onClick={handleExit}
@@ -1846,14 +1847,6 @@ export default function App() {
             {/* Class Summary Bar (Teacher only) */}
             {isTeacher && !loggedInStudentId && students.length > 0 && (
               <div className="col-span-full bg-white/80 backdrop-blur-md rounded-[2rem] p-4 border border-[#E1E4E8] flex flex-wrap items-center justify-center gap-6 mb-2">
-                <button 
-                  onClick={() => setIsAddingStudent(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#00B894] text-white rounded-xl font-bold hover:bg-[#00A383] transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t.addStudentBtn}
-                </button>
-                <div className="w-px h-6 bg-[#E1E4E8] hidden sm:block" />
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-[#F1C40F]/10 rounded-lg flex items-center justify-center">
                     <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
@@ -2584,12 +2577,22 @@ export default function App() {
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
-                    className="w-24 h-24 bg-[#F1C40F] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+                    className={`w-24 h-24 ${chestReward.petId ? 'bg-[#6C5CE7]' : 'bg-[#F1C40F]'} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
                   >
-                    <Coins className="w-12 h-12 text-white fill-current" />
+                    {chestReward.petId ? (
+                      <span className="text-5xl">{PETS.find(p => p.id === chestReward.petId)?.emoji}</span>
+                    ) : (
+                      <Coins className="w-12 h-12 text-white fill-current" />
+                    )}
                   </motion.div>
                   <h2 className="text-3xl font-black text-[#2D3436] mb-2">恭喜獲得！</h2>
-                  <p className="text-5xl font-black text-[#F39C12] mb-6">+{chestReward.amount} 金幣</p>
+                  {chestReward.petId ? (
+                    <p className="text-3xl font-black text-[#6C5CE7] mb-6">
+                      新寵物：{PETS.find(p => p.id === chestReward.petId)?.name}
+                    </p>
+                  ) : (
+                    <p className="text-5xl font-black text-[#F39C12] mb-6">+{chestReward.amount} 金幣</p>
+                  )}
                   <button 
                     onClick={() => setChestReward(null)}
                     className="w-full bg-[#6C5CE7] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5849BE] transition-all"
@@ -2639,7 +2642,11 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-2">
                             {chest.rewards.map((reward, idx) => (
                               <div key={idx} className="flex items-center justify-between text-xs font-bold">
-                                <span className="text-[#F39C12]">{reward.amount} 金幣</span>
+                                {reward.type === 'pet' ? (
+                                  <span className="text-[#6C5CE7]">{PETS.find(p => p.id === reward.petId)?.name}</span>
+                                ) : (
+                                  <span className="text-[#F39C12]">{reward.amount} 金幣</span>
+                                )}
                                 <span className="text-[#B2BEC3]">{reward.weight}%</span>
                               </div>
                             ))}
@@ -2772,17 +2779,17 @@ export default function App() {
                         return (
                           <button
                             key={pet.id}
-                            disabled={!isOwned && !canAfford}
+                            disabled={!isOwned && (pet.isSpecial || !canAfford)}
                             onClick={() => handleSelectPet(powerModalStudent.id, pet.id)}
                             className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all relative group ${
                               isEquipped 
                                 ? 'bg-[#F1F3F5] ring-2 ring-[#6C5CE7]' 
-                                : !isOwned && !canAfford 
+                                : !isOwned && (pet.isSpecial || !canAfford)
                                   ? 'opacity-50 grayscale cursor-not-allowed bg-gray-50' 
                                   : 'hover:bg-[#F1F3F5]'
                             }`}
                           >
-                            {!isOwned && !canAfford && (
+                            {!isOwned && (pet.isSpecial || !canAfford) && (
                               <div className="absolute top-2 right-2">
                                 <Lock className="w-3 h-3 text-[#636E72]" />
                               </div>
@@ -2794,7 +2801,7 @@ export default function App() {
                                 {pet.power} 能量
                               </span>
                               <span className={`text-[10px] font-black flex items-center gap-1 ${isEquipped ? 'text-[#00B894]' : isOwned ? 'text-[#0984E3]' : 'text-[#F39C12]'}`}>
-                                {isEquipped ? '使用中' : isOwned ? '已擁有' : `${pet.price} 金幣`}
+                                {isEquipped ? '使用中' : isOwned ? '已擁有' : pet.isSpecial ? '在level3寶箱' : `${pet.price} 金幣`}
                               </span>
                             </div>
                           </button>
