@@ -169,6 +169,22 @@ const TRANSLATIONS = {
     owned: '已拥有',
     inLevel3Chest: '在level3宝箱',
     removePet: '移除宠物头像',
+    petsAndAvatar: '宠物与头像',
+    customizeCharacter: '自定义你的角色',
+    pet: '宠物',
+    avatar: '头像',
+    power: '战力',
+    experience: '经验',
+    yourPet: '你的宠物',
+    changeAvatar: '更换头像',
+    choosePetFor: '为 {name} 选择一个宠物',
+    chooseAvatarFor: '为 {name} 选择一个新头像',
+    baseAvatar: '基础头像',
+    petAvatar: '宠物头像',
+    levelLocked: '等级 {level} 已锁定',
+    needToReach: '你需要达到',
+    toUnlockPets: '才能解锁此等级的宠物',
+    currentStageLabel: '目前阶段',
     students: '学生',
     exit: '退出',
     logout: '登出',
@@ -259,6 +275,9 @@ const TRANSLATIONS = {
     stage: '阶段',
     expLeaderboard: '排行榜',
     powerLeaderboard: 'Power 排行榜',
+    congratulations: '恭喜获得！',
+    newPet: '新宠物：',
+    awesome: '太棒了！',
     passwordErrorDetail: '密码错误或找不到该学生。',
     confirmDeleteStudent: '确定要删除这位学生吗？此操作无法撤销。',
     studentStatus: '学生身份',
@@ -292,6 +311,10 @@ const TRANSLATIONS = {
     rankPrefix: '第',
     rankSuffix: '名',
     backStep: '返回上一步',
+    skill_p1: '+1 分', skill_p2: '+2 分', skill_p3: '+3 分', skill_p4: '+4 分', skill_p5: '+5 分',
+    skill_1: '帮助他人', skill_2: '专注学习', skill_5: '团队合作',
+    skill_m1: '-1 分', skill_m2: '-2 分', skill_m3: '-3 分', skill_m4: '-4 分', skill_m5: '-5 分',
+    skill_n1: '分心', skill_n2: '不尊重他人',
     pet_1: '小狗', pet_2: '猫咪', pet_3: '小兔子', pet_4: '狐狸', pet_5: '熊猫',
     pet_6: '无尾熊', pet_7: '狮子', pet_8: '老虎', pet_9: '青蛙', pet_10: '猴子',
     pet_11: '公鸡', pet_12: '企鹅', pet_13: '小猪', pet_14: '小牛', pet_15: '大象',
@@ -305,6 +328,22 @@ const TRANSLATIONS = {
     owned: '已擁有',
     inLevel3Chest: '在level3寶箱',
     removePet: '移除寵物頭像',
+    petsAndAvatar: '寵物與頭像',
+    customizeCharacter: '自定義你的角色',
+    pet: '寵物',
+    avatar: '頭像',
+    power: '戰力',
+    experience: '經驗',
+    yourPet: '你的寵物',
+    changeAvatar: '更換頭像',
+    choosePetFor: '為 {name} 選擇一個寵物',
+    chooseAvatarFor: '為 {name} 選擇一個新頭像',
+    baseAvatar: '基礎頭像',
+    petAvatar: '寵物頭像',
+    levelLocked: '等級 {level} 已鎖定',
+    needToReach: '你需要達到',
+    toUnlockPets: '才能解鎖此等級的寵物',
+    currentStageLabel: '目前階段',
     students: '學生',
     exit: '退出',
     logout: '登出',
@@ -395,6 +434,9 @@ const TRANSLATIONS = {
     stage: '階段',
     expLeaderboard: '排行榜',
     powerLeaderboard: 'Power 排行榜',
+    congratulations: '恭喜獲得！',
+    newPet: '新寵物：',
+    awesome: '太棒了！',
     passwordErrorDetail: '密碼錯誤或找不到該學生。',
     confirmDeleteStudent: '確定要刪除這位學生嗎？此操作無法撤銷。',
     studentStatus: '學生身份',
@@ -428,6 +470,10 @@ const TRANSLATIONS = {
     rankPrefix: '第',
     rankSuffix: '名',
     backStep: '返回上一步',
+    skill_p1: '+1 分', skill_p2: '+2 分', skill_p3: '+3 分', skill_p4: '+4 分', skill_p5: '+5 分',
+    skill_1: '幫助他人', skill_2: '專注學習', skill_5: '團隊合作',
+    skill_m1: '-1 分', skill_m2: '-2 分', skill_m3: '-3 分', skill_m4: '-4 分', skill_m5: '-5 分',
+    skill_n1: '分心', skill_n2: '不尊重他人',
     pet_1: '小狗', pet_2: '貓咪', pet_3: '小兔子', pet_4: '狐狸', pet_5: '熊貓',
     pet_6: '無尾熊', pet_7: '獅子', pet_8: '老虎', pet_9: '青蛙', pet_10: '猴子',
     pet_11: '公雞', pet_12: '企鵝', pet_13: '小豬', pet_14: '小牛', pet_15: '大象',
@@ -441,6 +487,22 @@ const TRANSLATIONS = {
     owned: 'Dimiliki',
     inLevel3Chest: 'Dalam Peti Level 3',
     removePet: 'Alih Keluar Haiwan Peliharaan',
+    petsAndAvatar: 'Haiwan Peliharaan & Avatar',
+    customizeCharacter: 'Peribadikan watak anda',
+    pet: 'Haiwan Peliharaan',
+    avatar: 'Avatar',
+    power: 'Kuasa',
+    experience: 'Pengalaman',
+    yourPet: 'Haiwan Peliharaan Anda',
+    changeAvatar: 'Tukar Avatar',
+    choosePetFor: 'Pilih haiwan peliharaan untuk {name}',
+    chooseAvatarFor: 'Pilih avatar baru untuk {name}',
+    baseAvatar: 'Avatar Asas',
+    petAvatar: 'Avatar Haiwan',
+    levelLocked: 'Tahap {level} Terkunci',
+    needToReach: 'Anda perlu mencapai',
+    toUnlockPets: 'untuk membuka haiwan peliharaan tahap ini',
+    currentStageLabel: 'Peringkat semasa',
     students: 'Pelajar',
     exit: 'Keluar',
     logout: 'Log Keluar',
@@ -531,6 +593,9 @@ const TRANSLATIONS = {
     stage: 'Peringkat',
     expLeaderboard: 'Papan Pendahulu EXP',
     powerLeaderboard: 'Papan Pendahulu Power',
+    congratulations: 'Tahniah!',
+    newPet: 'Haiwan Peliharaan Baru: ',
+    awesome: 'Hebat!',
     passwordErrorDetail: 'Kata laluan salah atau pelajar tidak dijumpai.',
     confirmDeleteStudent: 'Adakah anda pasti mahu memadam pelajar ini? Tindakan ini tidak boleh diubah.',
     studentStatus: 'Status Pelajar',
@@ -564,6 +629,10 @@ const TRANSLATIONS = {
     rankPrefix: 'No. ',
     rankSuffix: '',
     backStep: 'Kembali',
+    skill_p1: '+1 Mata', skill_p2: '+2 Mata', skill_p3: '+3 Mata', skill_p4: '+4 Mata', skill_p5: '+5 Mata',
+    skill_1: 'Membantu orang lain', skill_2: 'Fokus belajar', skill_5: 'Kerjasama pasukan',
+    skill_m1: '-1 Mata', skill_m2: '-2 Mata', skill_m3: '-3 Mata', skill_m4: '-4 Mata', skill_m5: '-5 Mata',
+    skill_n1: 'Gangguan', skill_n2: 'Tidak menghormati',
     pet_1: 'Anjing', pet_2: 'Kucing', pet_3: 'Arnab', pet_4: 'Musang', pet_5: 'Panda',
     pet_6: 'Koala', pet_7: 'Singa', pet_8: 'Harimau', pet_9: 'Katak', pet_10: 'Monyet',
     pet_11: 'Ayam', pet_12: 'Penguin', pet_13: 'Babi', pet_14: 'Lembu', pet_15: 'Gajah',
@@ -577,6 +646,22 @@ const TRANSLATIONS = {
     owned: 'Owned',
     inLevel3Chest: 'In Level 3 Chest',
     removePet: 'Remove Pet Avatar',
+    petsAndAvatar: 'Pets & Avatar',
+    customizeCharacter: 'Customize your character',
+    pet: 'Pet',
+    avatar: 'Avatar',
+    power: 'Power',
+    experience: 'Experience',
+    yourPet: 'Your Pet',
+    changeAvatar: 'Change Avatar',
+    choosePetFor: 'Choose a pet for {name}',
+    chooseAvatarFor: 'Choose a new avatar for {name}',
+    baseAvatar: 'Base Avatar',
+    petAvatar: 'Pet Avatar',
+    levelLocked: 'Level {level} Locked',
+    needToReach: 'You need to reach',
+    toUnlockPets: 'to unlock pets of this level',
+    currentStageLabel: 'Current stage',
     students: 'Students',
     exit: 'Exit',
     logout: 'Logout',
@@ -667,6 +752,9 @@ const TRANSLATIONS = {
     stage: 'Stage',
     expLeaderboard: 'EXP Leaderboard',
     powerLeaderboard: 'Power Leaderboard',
+    congratulations: 'Congratulations!',
+    newPet: 'New Pet: ',
+    awesome: 'Awesome!',
     passwordErrorDetail: 'Incorrect password or student not found.',
     confirmDeleteStudent: 'Are you sure you want to delete this student? This action cannot be undone.',
     studentStatus: 'Student Status',
@@ -700,6 +788,10 @@ const TRANSLATIONS = {
     rankPrefix: 'Rank ',
     rankSuffix: '',
     backStep: 'Back',
+    skill_p1: '+1 Point', skill_p2: '+2 Point', skill_p3: '+3 Point', skill_p4: '+4 Point', skill_p5: '+5 Point',
+    skill_1: 'Helping others', skill_2: 'Focus on learning', skill_5: 'Teamwork',
+    skill_m1: '-1 Point', skill_m2: '-2 Point', skill_m3: '-3 Point', skill_m4: '-4 Point', skill_m5: '-5 Point',
+    skill_n1: 'Distracted', skill_n2: 'Disrespectful',
     pet_1: 'Puppy', pet_2: 'Kitty', pet_3: 'Bunny', pet_4: 'Fox', pet_5: 'Panda',
     pet_6: 'Koala', pet_7: 'Lion', pet_8: 'Tiger', pet_9: 'Frog', pet_10: 'Monkey',
     pet_11: 'Chicken', pet_12: 'Penguin', pet_13: 'Piggy', pet_14: 'Cow', pet_15: 'Elephant',
@@ -2378,7 +2470,7 @@ export default function App() {
                   >
                     <Zap className="w-3 h-3 text-[#6C5CE7] fill-current" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-[#636E72]">
-                      POWER: {getPetPower(student)}
+                      {t.power}: {getPetPower(student)}
                     </span>
                   </button>
 
@@ -2393,7 +2485,7 @@ export default function App() {
                   >
                     <Coins className="w-3 h-3 text-[#F39C12] fill-current" />
                     <span className="text-[9px] font-black text-[#636E72]">
-                      {student.coins || 0}
+                      {student.coins || 0} {t.coins}
                     </span>
                   </button>
                 </div>
@@ -2401,7 +2493,7 @@ export default function App() {
                 {/* Progress Bar (Experience) */}
                 <div className="w-full px-2 mt-2">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">EXP: {(student.points || 0) * 10}</span>
+                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">{t.exp}: {(student.points || 0) * 10}</span>
                     <span className="text-[9px] font-black text-[#00B894] bg-[#00B894]/10 px-1.5 rounded-md">
                       {t.stage} {Math.floor((student.points || 0) / 30)}
                     </span>
@@ -2612,7 +2704,7 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-1 text-[10px] font-black text-[#00B894] uppercase tracking-wider">
                               <Star className="w-3 h-3 fill-current" />
-                              {(student.points || 0) * 10} EXP
+                              {(student.points || 0) * 10} {t.exp}
                             </div>
                             <div className="flex items-center gap-1 text-[10px] font-black text-[#6C5CE7] uppercase tracking-wider">
                               <Medal className="w-3 h-3 fill-current" />
@@ -2925,19 +3017,19 @@ export default function App() {
                       <Coins className="w-12 h-12 text-white fill-current" />
                     )}
                   </motion.div>
-                  <h2 className="text-3xl font-black text-[#2D3436] mb-2">恭喜獲得！</h2>
+                  <h2 className="text-3xl font-black text-[#2D3436] mb-2">{t.congratulations}</h2>
                   {chestReward.petId ? (
                     <p className="text-3xl font-black text-[#6C5CE7] mb-6">
-                      新寵物：{PETS.find(p => p.id === chestReward.petId)?.name}
+                      {t.newPet}{t[`pet_${chestReward.petId}`] || PETS.find(p => p.id === chestReward.petId)?.name}
                     </p>
                   ) : (
-                    <p className="text-5xl font-black text-[#F39C12] mb-6">+{chestReward.amount} 金幣</p>
+                    <p className="text-5xl font-black text-[#F39C12] mb-6">+{chestReward.amount} {t.coins}</p>
                   )}
                   <button 
                     onClick={() => setChestReward(null)}
                     className="w-full bg-[#6C5CE7] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5849BE] transition-all"
                   >
-                    太棒了！
+                    {t.awesome}
                   </button>
                 </div>
               ) : (
@@ -3033,15 +3125,17 @@ export default function App() {
                   )}
                 </div>
                 <h2 className="text-2xl font-bold">
-                  {powerModalMode === 'pet' ? '你的寵物' : '更換頭像'}
+                  {powerModalMode === 'pet' ? t.yourPet : t.changeAvatar}
                 </h2>
                 <p className="text-[#636E72] mt-1">
-                  {powerModalMode === 'pet' ? `為 ${powerModalStudent.name} 選擇一個寵物` : `為 ${powerModalStudent.name} 選擇一個新頭像`}
+                  {powerModalMode === 'pet' 
+                    ? t.choosePetFor.replace('{name}', powerModalStudent.name) 
+                    : t.chooseAvatarFor.replace('{name}', powerModalStudent.name)}
                 </p>
                 {powerModalMode === 'pet' && (
                   <div className="mt-4 inline-flex items-center gap-2 bg-[#F1C40F]/10 px-4 py-2 rounded-2xl border border-[#F1C40F]/20">
                     <Coins className="w-4 h-4 text-[#F1C40F] fill-current" />
-                    <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} 金幣</span>
+                    <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} {t.coins}</span>
                   </div>
                 )}
               </div>
@@ -3052,13 +3146,13 @@ export default function App() {
                     onClick={() => setPowerModalMode('avatar')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'avatar' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
                   >
-                    基礎頭像
+                    {t.baseAvatar}
                   </button>
                   <button 
                     onClick={() => setPowerModalMode('pet')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'pet' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
                   >
-                    寵物頭像
+                    {t.petAvatar}
                   </button>
                 </div>
               )}
@@ -3084,7 +3178,7 @@ export default function App() {
                           }`}
                         >
                           {isLocked && <Lock className="w-3 h-3" />}
-                          等級 {tier}
+                          {t.level} {tier}
                         </button>
                       );
                     })}
@@ -3101,11 +3195,11 @@ export default function App() {
                             <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
                               <Lock className="w-8 h-8 text-gray-400" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900">等級 {selectedPetTier} 已鎖定</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{t.levelLocked.replace('{level}', selectedPetTier.toString())}</h3>
                             <p className="text-sm text-gray-500 mt-2 max-w-[200px]">
-                              你需要達到 <span className="font-black text-[#6C5CE7]">階段 {selectedPetTier}</span> 才能解鎖此等級的寵物。
+                              {t.needToReach} <span className="font-black text-[#6C5CE7]">{t.stage} {selectedPetTier}</span> {t.toUnlockPets}。
                               <br />
-                              <span className="text-[10px] mt-1 block">(目前階段: {currentStage})</span>
+                              <span className="text-[10px] mt-1 block">({t.currentStageLabel}: {currentStage})</span>
                             </p>
                           </div>
                         );
@@ -3291,7 +3385,7 @@ export default function App() {
                     } group-hover:text-white`}>
                       <SkillIcon name={skill.icon} className="w-7 h-7" />
                     </div>
-                    <span className="text-xs font-bold text-center leading-tight">{skill.name}</span>
+                    <span className="text-xs font-bold text-center leading-tight">{t[`skill_${skill.id}`] || skill.name}</span>
                     <span className={`text-[10px] font-black ${skill.points > 0 ? 'text-[#00B894]' : 'text-[#D63031]'}`}>
                       {skill.points > 0 ? `+${skill.points}` : skill.points}
                     </span>
