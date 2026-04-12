@@ -165,6 +165,10 @@ const TRANSLATIONS = {
   'zh-Hans': {
     myClasses: '我的班级',
     newClass: '新班级',
+    equipped: '使用中',
+    owned: '已拥有',
+    inLevel3Chest: '在level3宝箱',
+    removePet: '移除宠物头像',
     students: '学生',
     exit: '退出',
     logout: '登出',
@@ -253,12 +257,54 @@ const TRANSLATIONS = {
     toolbox: '工具箱',
     countdown: '倒计时',
     stage: '阶段',
-    expLeaderboard: '经验值排行榜',
-    powerLeaderboard: 'Power 排行榜'
+    expLeaderboard: '排行榜',
+    powerLeaderboard: 'Power 排行榜',
+    passwordErrorDetail: '密码错误或找不到该学生。',
+    confirmDeleteStudent: '确定要删除这位学生吗？此操作无法撤销。',
+    studentStatus: '学生身份',
+    totalStudents: '学生总数',
+    studentCount: '学生人数',
+    studentPerformance: '学生表现',
+    homeworkAnswerPlaceholder: '学生输入此答案即可获得奖励',
+    createYourClass: '创建您的班级',
+    classNameLabel: '班级名称',
+    startManagingClass: '开始管理班级',
+    totalClassCoins: '班级总金币',
+    totalClassExp: '班级总经验',
+    expStarTagline: '谁是班级的学习之星？',
+    powerStarTagline: '谁的宠物最强大？',
+    rename: '重命名',
+    enter: '进入',
+    classNamePlaceholder: '例如：三年二班',
+    renameFailed: '重命名失败',
+    loginErrorDetail: '登录时出错，请稍后再试。',
+    passwordTaken: '此密码已经有人使用过了！请更换一个。',
+    setPasswordError: '设定密码时出错，请稍后再试。',
+    fullNamePlaceholder: '输入全名',
+    questionPlaceholder: '请输入题目内容...',
+    popupBlocked: '登录窗口被拦截了！请点击右上角的「在新分页开启」按钮，或允许此网站弹出窗口。',
+    popupClosed: '您关闭了登录窗口，请再试一次。',
+    loginFailed: '登录失败，请稍后再试。',
+    teacherName: '史密斯老师',
+    verifiedTeacher: '认证教师',
+    guestTeacher: '游客教师',
+    exitTooltip: '退出并返回首页',
+    rankPrefix: '第',
+    rankSuffix: '名',
+    backStep: '返回上一步',
+    pet_1: '小狗', pet_2: '猫咪', pet_3: '小兔子', pet_4: '狐狸', pet_5: '熊猫',
+    pet_6: '无尾熊', pet_7: '狮子', pet_8: '老虎', pet_9: '青蛙', pet_10: '猴子',
+    pet_11: '公鸡', pet_12: '企鹅', pet_13: '小猪', pet_14: '小牛', pet_15: '大象',
+    pet_16: '长颈鹿', pet_17: '章鱼', pet_18: '乌贼', pet_19: '神龙', pet_20: '恐龙',
+    pet_21: '王者', pet_22: '钻石', pet_23: '彩虹独角兽'
   },
   'zh-Hant': {
     myClasses: '我的班級',
     newClass: '新班級',
+    equipped: '使用中',
+    owned: '已擁有',
+    inLevel3Chest: '在level3寶箱',
+    removePet: '移除寵物頭像',
     students: '學生',
     exit: '退出',
     logout: '登出',
@@ -347,12 +393,54 @@ const TRANSLATIONS = {
     toolbox: '工具箱',
     countdown: '倒計時',
     stage: '階段',
-    expLeaderboard: '經驗值排行榜',
-    powerLeaderboard: 'Power 排行榜'
+    expLeaderboard: '排行榜',
+    powerLeaderboard: 'Power 排行榜',
+    passwordErrorDetail: '密碼錯誤或找不到該學生。',
+    confirmDeleteStudent: '確定要刪除這位學生嗎？此操作無法撤銷。',
+    studentStatus: '學生身份',
+    totalStudents: '學生總數',
+    studentCount: '學生人數',
+    studentPerformance: '學生表現',
+    homeworkAnswerPlaceholder: '學生輸入此答案即可獲得獎勵',
+    createYourClass: '創建您的班級',
+    classNameLabel: '班級名稱',
+    startManagingClass: '開始管理班級',
+    totalClassCoins: '班級總金幣',
+    totalClassExp: '班級總經驗',
+    expStarTagline: '誰是班級的學習之星？',
+    powerStarTagline: '誰的寵物最強大？',
+    rename: '重新命名',
+    enter: '進入',
+    classNamePlaceholder: '例如：三年二班',
+    renameFailed: '重新命名失敗',
+    loginErrorDetail: '登入時出錯，請稍後再試。',
+    passwordTaken: '此密碼已經有人使用過了！請更換一個。',
+    setPasswordError: '設定密碼時出錯，請稍後再試。',
+    fullNamePlaceholder: '輸入全名',
+    questionPlaceholder: '請輸入題目內容...',
+    popupBlocked: '登入視窗被攔截了！請點擊右上角的「在新分頁開啟」按鈕，或允許此網站彈出視窗。',
+    popupClosed: '您關閉了登入視窗，請再試一次。',
+    loginFailed: '登入失敗，請稍後再試。',
+    teacherName: '史密斯老師',
+    verifiedTeacher: '認證教師',
+    guestTeacher: '遊客教師',
+    exitTooltip: '退出並返回首頁',
+    rankPrefix: '第',
+    rankSuffix: '名',
+    backStep: '返回上一步',
+    pet_1: '小狗', pet_2: '貓咪', pet_3: '小兔子', pet_4: '狐狸', pet_5: '熊貓',
+    pet_6: '無尾熊', pet_7: '獅子', pet_8: '老虎', pet_9: '青蛙', pet_10: '猴子',
+    pet_11: '公雞', pet_12: '企鵝', pet_13: '小豬', pet_14: '小牛', pet_15: '大象',
+    pet_16: '長頸鹿', pet_17: '章魚', pet_18: '烏賊', pet_19: '神龍', pet_20: '恐龍',
+    pet_21: '王者', pet_22: '鑽石', pet_23: '彩虹獨角獸'
   },
   ms: {
     myClasses: 'Kelas Saya',
     newClass: 'Kelas Baru',
+    equipped: 'Digunakan',
+    owned: 'Dimiliki',
+    inLevel3Chest: 'Dalam Peti Level 3',
+    removePet: 'Alih Keluar Haiwan Peliharaan',
     students: 'Pelajar',
     exit: 'Keluar',
     logout: 'Log Keluar',
@@ -438,12 +526,57 @@ const TRANSLATIONS = {
     damageLeaderboard: 'Papan Pendahulu Kerosakan',
     victory: 'Kemenangan!',
     rewards: 'Ganjaran telah diberikan',
+    toolbox: 'Kotak Alat',
+    countdown: 'Kira Detik',
+    stage: 'Peringkat',
     expLeaderboard: 'Papan Pendahulu EXP',
-    powerLeaderboard: 'Papan Pendahulu Power'
+    powerLeaderboard: 'Papan Pendahulu Power',
+    passwordErrorDetail: 'Kata laluan salah atau pelajar tidak dijumpai.',
+    confirmDeleteStudent: 'Adakah anda pasti mahu memadam pelajar ini? Tindakan ini tidak boleh diubah.',
+    studentStatus: 'Status Pelajar',
+    totalStudents: 'Jumlah Pelajar',
+    studentCount: 'Bilangan Pelajar',
+    studentPerformance: 'Prestasi Pelajar',
+    homeworkAnswerPlaceholder: 'Pelajar masukkan jawapan ini untuk ganjaran',
+    createYourClass: 'Cipta Kelas Anda',
+    classNameLabel: 'Nama Kelas',
+    startManagingClass: 'Mula Mengurus Kelas',
+    totalClassCoins: 'Jumlah Syiling Kelas',
+    totalClassExp: 'Jumlah EXP Kelas',
+    expStarTagline: 'Siapa bintang pembelajaran kelas?',
+    powerStarTagline: 'Siapa mempunyai haiwan peliharaan terkuat?',
+    rename: 'Tukar Nama',
+    enter: 'Masuk',
+    classNamePlaceholder: 'Contoh: Tahun 3A',
+    renameFailed: 'Gagal menukar nama',
+    loginErrorDetail: 'Ralat semasa log masuk, sila cuba lagi.',
+    passwordTaken: 'Kata laluan ini sudah digunakan! Sila pilih yang lain.',
+    setPasswordError: 'Ralat semasa menetapkan kata laluan, sila cuba lagi.',
+    fullNamePlaceholder: 'Masukkan nama penuh',
+    questionPlaceholder: 'Sila masukkan soalan...',
+    popupBlocked: 'Tetingkap timbul disekat! Sila benarkan tetingkap timbul untuk laman web ini.',
+    popupClosed: 'Anda telah menutup tetingkap log masuk, sila cuba lagi.',
+    loginFailed: 'Log masuk gagal, sila cuba lagi kemudian.',
+    teacherName: 'Cikgu Smith',
+    verifiedTeacher: 'Guru Disahkan',
+    guestTeacher: 'Guru Tetamu',
+    exitTooltip: 'Keluar dan kembali ke halaman utama',
+    rankPrefix: 'No. ',
+    rankSuffix: '',
+    backStep: 'Kembali',
+    pet_1: 'Anjing', pet_2: 'Kucing', pet_3: 'Arnab', pet_4: 'Musang', pet_5: 'Panda',
+    pet_6: 'Koala', pet_7: 'Singa', pet_8: 'Harimau', pet_9: 'Katak', pet_10: 'Monyet',
+    pet_11: 'Ayam', pet_12: 'Penguin', pet_13: 'Babi', pet_14: 'Lembu', pet_15: 'Gajah',
+    pet_16: 'Zirafah', pet_17: 'Sotong', pet_18: 'Sotong Kurita', pet_19: 'Naga', pet_20: 'Dinosaur',
+    pet_21: 'Raja', pet_22: 'Berlian', pet_23: 'Unicorn Pelangi'
   },
   en: {
     myClasses: 'My Classes',
     newClass: 'New Class',
+    equipped: 'Equipped',
+    owned: 'Owned',
+    inLevel3Chest: 'In Level 3 Chest',
+    removePet: 'Remove Pet Avatar',
     students: 'Students',
     exit: 'Exit',
     logout: 'Logout',
@@ -529,8 +662,49 @@ const TRANSLATIONS = {
     damageLeaderboard: 'Damage Leaderboard',
     victory: 'Victory!',
     rewards: 'Rewards distributed',
+    toolbox: 'Toolbox',
+    countdown: 'Countdown',
+    stage: 'Stage',
     expLeaderboard: 'EXP Leaderboard',
-    powerLeaderboard: 'Power Leaderboard'
+    powerLeaderboard: 'Power Leaderboard',
+    passwordErrorDetail: 'Incorrect password or student not found.',
+    confirmDeleteStudent: 'Are you sure you want to delete this student? This action cannot be undone.',
+    studentStatus: 'Student Status',
+    totalStudents: 'Total Students',
+    studentCount: 'Student Count',
+    studentPerformance: 'Student Performance',
+    homeworkAnswerPlaceholder: 'Students enter this answer for rewards',
+    createYourClass: 'Create Your Class',
+    classNameLabel: 'Class Name',
+    startManagingClass: 'Start Managing Class',
+    totalClassCoins: 'Total Class Coins',
+    totalClassExp: 'Total Class EXP',
+    expStarTagline: 'Who is the class learning star?',
+    powerStarTagline: 'Who has the strongest pet?',
+    rename: 'Rename',
+    enter: 'Enter',
+    classNamePlaceholder: 'e.g. Grade 3B',
+    renameFailed: 'Rename failed',
+    loginErrorDetail: 'Error during login, please try again later.',
+    passwordTaken: 'This password is already taken! Please choose another.',
+    setPasswordError: 'Error setting password, please try again later.',
+    fullNamePlaceholder: 'Enter full name',
+    questionPlaceholder: 'Please enter question content...',
+    popupBlocked: 'Login popup was blocked! Please allow popups for this site.',
+    popupClosed: 'You closed the login window, please try again.',
+    loginFailed: 'Login failed, please try again later.',
+    teacherName: 'Teacher Smith',
+    verifiedTeacher: 'Verified Teacher',
+    guestTeacher: 'Guest Teacher',
+    exitTooltip: 'Exit and return to home page',
+    rankPrefix: 'Rank ',
+    rankSuffix: '',
+    backStep: 'Back',
+    pet_1: 'Puppy', pet_2: 'Kitty', pet_3: 'Bunny', pet_4: 'Fox', pet_5: 'Panda',
+    pet_6: 'Koala', pet_7: 'Lion', pet_8: 'Tiger', pet_9: 'Frog', pet_10: 'Monkey',
+    pet_11: 'Chicken', pet_12: 'Penguin', pet_13: 'Piggy', pet_14: 'Cow', pet_15: 'Elephant',
+    pet_16: 'Giraffe', pet_17: 'Octopus', pet_18: 'Squid', pet_19: 'Dragon', pet_20: 'Dino',
+    pet_21: 'King', pet_22: 'Diamond', pet_23: 'Rainbow Unicorn'
   }
 };
 
@@ -852,10 +1026,10 @@ export default function App() {
       }
       
       playSound('error');
-      alert('密碼錯誤或找不到該學生。');
+      alert(t.passwordErrorDetail);
     } catch (error) {
       console.error("Error during student login:", error);
-      alert("登入時出錯，請稍後再試。");
+      alert(t.loginErrorDetail);
     }
   };
 
@@ -917,14 +1091,14 @@ export default function App() {
     } catch (error: any) {
       console.error('Login failed', error);
       if (error.code === 'auth/popup-blocked') {
-        setLoginError('登入視窗被攔截了！請點擊右上角的「在新分頁開啟」按鈕，或允許此網站彈出視窗。');
+        setLoginError(t.popupBlocked);
       } else if (error.code === 'auth/cancelled-popup-request') {
         // This happens if multiple popups are requested, we can ignore it or show a subtle message
         console.warn('Multiple login requests detected, previous one cancelled.');
       } else if (error.code === 'auth/popup-closed-by-user') {
-        setLoginError('您關閉了登入視窗，請再試一次。');
+        setLoginError(t.popupClosed);
       } else {
-        setLoginError('登入失敗，請稍後再試。');
+        setLoginError(t.loginFailed);
       }
     } finally {
       setIsLoggingIn(false);
@@ -993,7 +1167,7 @@ export default function App() {
                   onClick={() => { setLanguage('zh-Hans'); setIsLangMenuOpen(false); }}
                   className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh-Hans' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F1F3F5]'}`}
                 >
-                  華文（簡體）
+                  华文（简体）
                 </button>
                 <button 
                   onClick={() => { setLanguage('zh-Hant'); setIsLangMenuOpen(false); }}
@@ -1073,7 +1247,7 @@ export default function App() {
       playSound('success');
     } catch (error) {
       console.error('Failed to rename class', error);
-      alert('重新命名失敗');
+      alert(t.renameFailed);
     }
   };
 
@@ -1187,7 +1361,7 @@ export default function App() {
               </div>
               <div>
                 <h2 className="text-xl font-black text-[#2D3436]">{t.loginAsStudent}</h2>
-                <p className="text-xs text-[#636E72] font-bold uppercase tracking-widest">輸入 6 位數字密碼</p>
+                <p className="text-xs text-[#636E72] font-bold uppercase tracking-widest">{t.enterPassword}</p>
               </div>
             </div>
             
@@ -1213,7 +1387,7 @@ export default function App() {
                 disabled={studentLoginPassword.length !== 6}
                 className="bg-[#0984E3] text-white px-8 rounded-2xl font-black text-xl hover:bg-[#0773C5] transition-all shadow-lg shadow-[#0984E3]/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
               >
-                進入
+                {t.enter}
               </button>
             </div>
           </motion.div>
@@ -1247,7 +1421,7 @@ export default function App() {
                           setEditingClassName(cls.name);
                         }}
                         className="p-2 bg-[#F1F3F5] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] text-[#636E72]"
-                        title="重新命名"
+                        title={t.rename}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -1272,20 +1446,20 @@ export default function App() {
                           }}
                           className="w-full bg-[#F1F3F5] border-2 border-[#00B894] rounded-xl px-3 py-2 text-sm font-bold text-center outline-none"
                         />
-                        <div className="flex gap-2 justify-center">
-                          <button
-                            onClick={(e) => handleRenameClass(e, cls.id)}
-                            className="bg-[#00B894] text-white px-3 py-1 rounded-lg text-xs font-black"
-                          >
-                            儲存
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingClassId(null); }}
-                            className="bg-[#DFE6E9] text-[#636E72] px-3 py-1 rounded-lg text-xs font-black"
-                          >
-                            取消
-                          </button>
-                        </div>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={(e) => handleRenameClass(e, cls.id)}
+                              className="bg-[#00B894] text-white px-3 py-1 rounded-lg text-xs font-black"
+                            >
+                              {t.save}
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingClassId(null); }}
+                              className="bg-[#DFE6E9] text-[#636E72] px-3 py-1 rounded-lg text-xs font-black"
+                            >
+                              {t.cancel}
+                            </button>
+                          </div>
                       </div>
                     ) : (
                       <h3 className="text-lg font-black text-[#2D3436] mb-2">{cls.name}</h3>
@@ -1371,17 +1545,17 @@ export default function App() {
             <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center">
               <Plus className="text-[#00B894] w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-[#2D3436]">創建您的班級</h2>
+            <h2 className="text-2xl font-black text-[#2D3436]">{t.createYourClass}</h2>
           </div>
           
           <div className="space-y-6">
             <div>
-              <label className="text-[10px] font-black text-[#636E72] uppercase tracking-widest mb-2 block px-1">班級名稱</label>
+              <label className="text-[10px] font-black text-[#636E72] uppercase tracking-widest mb-2 block px-1">{t.classNameLabel}</label>
               <input 
                 type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
-                placeholder="例如：三年二班"
+                placeholder={t.classNamePlaceholder}
                 className="w-full bg-[#F1F3F5] border-2 border-transparent rounded-2xl px-6 py-4 text-xl font-bold outline-none focus:border-[#00B894] transition-all"
               />
             </div>
@@ -1391,14 +1565,14 @@ export default function App() {
               onClick={handleCreateClass}
               className="w-full bg-[#00B894] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#00A383] disabled:bg-[#DFE6E9] disabled:text-[#B2BEC3] disabled:cursor-not-allowed transition-all shadow-lg shadow-[#00B894]/30"
             >
-              開始管理班級
+              {t.startManagingClass}
             </button>
             
             <button 
               onClick={() => setView('landing')}
               className="w-full text-[#636E72] font-bold text-sm hover:text-[#2D3436] transition-colors"
             >
-              返回上一步
+              {t.backStep}
             </button>
           </div>
         </motion.div>
@@ -1737,7 +1911,7 @@ export default function App() {
   };
 
   const handleDeleteStudent = async (studentId: string) => {
-    if (!window.confirm('確定要刪除這位學生嗎？此操作無法撤銷。')) return;
+    if (!window.confirm(t.confirmDeleteStudent)) return;
 
     const student = students.find(s => s.id === studentId);
     if (student?.password) {
@@ -1830,7 +2004,7 @@ export default function App() {
                                     const val = e.target.value.replace(/\D/g, '');
                                     setStudentLoginPassword(val);
                                   }}
-                                  placeholder="密碼"
+                                  placeholder={t.passwordPlaceholder}
                                   className="w-full bg-white border border-[#E1E4E8] rounded-lg px-2 py-1.5 text-sm font-bold text-center tracking-widest outline-none focus:border-[#6C5CE7]"
                                 />
                               </div>
@@ -1839,7 +2013,7 @@ export default function App() {
                                 disabled={studentLoginPassword.length !== 6}
                                 className="bg-[#0984E3] text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-[#0773C5] disabled:opacity-50"
                               >
-                                登入
+                                {t.login}
                               </button>
                             </div>
                           </div>
@@ -1979,13 +2153,13 @@ export default function App() {
             <div className="hidden md:block text-right">
               {loggedInStudentId ? (
                 <>
-                  <p className="text-sm font-bold">{students.find(s => s.id === loggedInStudentId)?.name || '學生'}</p>
-                  <p className="text-xs text-[#636E72]">學生身份</p>
+                  <p className="text-sm font-bold">{students.find(s => s.id === loggedInStudentId)?.name || t.students}</p>
+                  <p className="text-xs text-[#636E72]">{t.studentStatus}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-bold">{user ? user.displayName : '史密斯老師'}</p>
-                  <p className="text-xs text-[#636E72]">{user ? '認證教師' : '遊客教師'}</p>
+                  <p className="text-sm font-bold">{user ? user.displayName : t.teacherName}</p>
+                  <p className="text-xs text-[#636E72]">{user ? t.verifiedTeacher : t.guestTeacher}</p>
                 </>
               )}
             </div>
@@ -1993,7 +2167,7 @@ export default function App() {
               <button 
                 onClick={handleExit}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DFE6E9] hover:bg-[#D63031]/10 group transition-colors"
-                title="退出並返回首頁"
+                title={t.exitTooltip}
               >
                 <LogOut className="w-5 h-5 text-[#636E72] group-hover:text-[#D63031]" />
                 <span className="font-bold text-[#636E72] group-hover:text-[#D63031] hidden sm:inline">{t.exit}</span>
@@ -2018,7 +2192,7 @@ export default function App() {
                     <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">班級總金幣</p>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalClassCoins}</p>
                     <p className="text-sm font-black text-[#F39C12]">{students.reduce((acc, s) => acc + (s.coins || 0), 0)}</p>
                   </div>
                 </div>
@@ -2027,7 +2201,7 @@ export default function App() {
                     <Star className="w-4 h-4 text-[#00B894] fill-current" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">班級總經驗</p>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalClassExp}</p>
                     <p className="text-sm font-black text-[#00B894]">{students.reduce((acc, s) => acc + (s.exp || 0), 0)}</p>
                   </div>
                 </div>
@@ -2036,7 +2210,7 @@ export default function App() {
                     <Users className="w-4 h-4 text-[#6C5CE7]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">學生總數</p>
+                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalStudents}</p>
                     <p className="text-sm font-black text-[#6C5CE7]">{students.length}</p>
                   </div>
                 </div>
@@ -2358,7 +2532,7 @@ export default function App() {
                   {leaderboardTab === 'exp' ? t.expLeaderboard : t.powerLeaderboard}
                 </h2>
                 <p className="text-white/70 text-sm font-bold mt-1 relative z-10">
-                  {leaderboardTab === 'exp' ? '誰是班級的學習之星？' : '誰的寵物最強大？'}
+                  {leaderboardTab === 'exp' ? t.expStarTagline : t.powerStarTagline}
                 </p>
 
                 {/* Tab Switcher */}
@@ -2410,7 +2584,7 @@ export default function App() {
                           {index === 0 ? (
                             <Crown className="w-6 h-6 text-[#F1C40F] fill-current" />
                           ) : (
-                            `第 ${index + 1} 名`
+                            `${t.rankPrefix}${index + 1}${t.rankSuffix}`
                           )}
                         </div>
                         
@@ -2670,14 +2844,14 @@ export default function App() {
                 <p className="text-3xl font-black text-[#6C5CE7]">{students.reduce((acc, s) => acc + (s.points * 10), 0)}</p>
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">學生人數</p>
+                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">{t.studentCount}</p>
                 <p className="text-3xl font-black text-[#0984E3]">{students.length}</p>
               </div>
             </div>
 
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-[#E1E4E8] overflow-hidden">
               <div className="p-8 border-b border-[#F1F3F5]">
-                <h2 className="text-xl font-bold">學生表現</h2>
+                <h2 className="text-xl font-bold">{t.studentPerformance}</h2>
               </div>
               <div className="p-4">
                 {students.sort((a, b) => b.points - a.points).map((student, index) => (
@@ -2961,13 +3135,13 @@ export default function App() {
                               </div>
                             )}
                             <span className="text-4xl group-hover:scale-110 transition-transform">{pet.emoji}</span>
-                            <span className="text-sm font-bold">{pet.name}</span>
+                            <span className="text-sm font-bold">{t[`pet_${pet.id}`] || pet.name}</span>
                             <div className="flex flex-col items-center gap-1">
                               <span className="text-[10px] font-black text-[#6C5CE7] bg-[#6C5CE7]/10 px-2 py-0.5 rounded-full">
-                                {pet.power} 能量
+                                {pet.power} {t.energyUnit}
                               </span>
                               <span className={`text-[10px] font-black flex items-center gap-1 ${isEquipped ? 'text-[#00B894]' : isOwned ? 'text-[#0984E3]' : 'text-[#F39C12]'}`}>
-                                {isEquipped ? '使用中' : isOwned ? '已擁有' : pet.isSpecial ? '在level3寶箱' : `${pet.price} 金幣`}
+                                {isEquipped ? t.equipped : isOwned ? t.owned : pet.isSpecial ? t.inLevel3Chest : `${pet.price} ${t.coins}`}
                               </span>
                             </div>
                           </button>
@@ -2978,7 +3152,7 @@ export default function App() {
                       onClick={() => handleSelectPet(powerModalStudent.id, 0)}
                       className="col-span-2 mt-2 py-3 rounded-xl text-sm font-bold text-[#D63031] hover:bg-[#FFF5F5] transition-colors"
                     >
-                      移除寵物頭像
+                      {t.removePet}
                     </button>
                   </div>
                 </>
@@ -3165,7 +3339,7 @@ export default function App() {
                       type="text" 
                       value={newStudentName}
                       onChange={(e) => setNewStudentName(e.target.value)}
-                      placeholder="輸入全名"
+                      placeholder={t.fullNamePlaceholder}
                       className="w-full px-4 py-3 rounded-xl border border-[#E1E4E8] focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all"
                     />
                   </div>
@@ -3228,7 +3402,7 @@ export default function App() {
                       type="text" 
                       value={editStudentName}
                       onChange={(e) => setEditStudentName(e.target.value)}
-                      placeholder="輸入全名"
+                      placeholder={t.fullNamePlaceholder}
                       className="w-full px-4 py-3 rounded-xl border border-[#E1E4E8] focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all"
                     />
                   </div>
@@ -3629,7 +3803,7 @@ export default function App() {
                         value={newHomework.question}
                         onChange={(e) => setNewHomework({...newHomework, question: e.target.value})}
                         className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all h-24"
-                        placeholder="請輸入題目內容..."
+                        placeholder={t.questionPlaceholder}
                       />
                     </div>
                     <div>
@@ -3669,7 +3843,7 @@ export default function App() {
                         value={newHomework.answer}
                         onChange={(e) => setNewHomework({...newHomework, answer: e.target.value})}
                         className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
-                        placeholder="學生輸入此答案即可獲得獎勵"
+                        placeholder={t.homeworkAnswerPlaceholder}
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
