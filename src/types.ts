@@ -5,11 +5,22 @@ export interface Student {
   points: number;
   exp?: number;
   ownedPets: number[]; // Array of pet levels (1: Dog, 2: Cat, 3: Rabbit, 4: Fox)
+  ownedSpecialPets?: string[]; // Array of special pet IDs
   equippedPet: number | null; // Currently selected pet level for avatar
+  equippedSpecialPet?: string | null; // Currently selected special pet ID
   coins: number;
   medals: number;
   maxLevelReached: number;
   password?: string;
+}
+
+export interface SpecialPet {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  power: number;
+  createdAt: any;
 }
 
 export interface StoryPost {

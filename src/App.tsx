@@ -39,7 +39,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Student, StoryPost, Skill, Homework } from './types';
+import { Student, StoryPost, Skill, Homework, SpecialPet } from './types';
 import { SKILLS, INITIAL_STUDENTS, NEEDS_WORK_SKILLS } from './constants';
 import { auth, db } from './firebase';
 import { 
@@ -271,6 +271,15 @@ const TRANSLATIONS = {
     victory: '战斗胜利！',
     rewards: '奖励已发放',
     toolbox: '工具箱',
+    specialPet: '特别宠物',
+    addSpecialPet: '增加特别宠物',
+    petName: '宠物名字',
+    petPrice: '价格 (金币)',
+    petPhoto: '照片网址',
+    petPower: '力量数量',
+    buy: '购买',
+    notEnoughCoins: '金币不足',
+    alreadyOwned: '已拥有',
     countdown: '倒计时',
     stage: '阶段',
     expLeaderboard: '排行榜',
@@ -430,6 +439,15 @@ const TRANSLATIONS = {
     victory: '戰鬥勝利！',
     rewards: '獎勵已發放',
     toolbox: '工具箱',
+    specialPet: '特別寵物',
+    addSpecialPet: '增加特別寵物',
+    petName: '寵物名字',
+    petPrice: '價格 (金幣)',
+    petPhoto: '寵物照片網址',
+    petPower: '力量數量',
+    buy: '購買',
+    notEnoughCoins: '金幣不足',
+    alreadyOwned: '已擁有',
     countdown: '倒計時',
     stage: '階段',
     expLeaderboard: '排行榜',
@@ -589,6 +607,15 @@ const TRANSLATIONS = {
     victory: 'Kemenangan!',
     rewards: 'Ganjaran telah diberikan',
     toolbox: 'Kotak Alat',
+    specialPet: 'Haiwan Istimewa',
+    addSpecialPet: 'Tambah Haiwan Istimewa',
+    petName: 'Nama Haiwan',
+    petPrice: 'Harga (Syiling)',
+    petPhoto: 'URL Foto Haiwan',
+    petPower: 'Jumlah Kuasa',
+    buy: 'Beli',
+    notEnoughCoins: 'Syiling tidak mencukupi',
+    alreadyOwned: 'Sedia ada',
     countdown: 'Kira Detik',
     stage: 'Peringkat',
     expLeaderboard: 'Papan Pendahulu EXP',
@@ -748,6 +775,15 @@ const TRANSLATIONS = {
     victory: 'Victory!',
     rewards: 'Rewards distributed',
     toolbox: 'Toolbox',
+    specialPet: 'Special Pet',
+    addSpecialPet: 'Add Special Pet',
+    petName: 'Pet Name',
+    petPrice: 'Price (Coins)',
+    petPhoto: 'Pet Photo URL',
+    petPower: 'Power Amount',
+    buy: 'Buy',
+    notEnoughCoins: 'Not enough coins',
+    alreadyOwned: 'Already Owned',
     countdown: 'Countdown',
     stage: 'Stage',
     expLeaderboard: 'EXP Leaderboard',
@@ -851,6 +887,17 @@ export default function App() {
   const [passwordModalStudent, setPasswordModalStudent] = useState<Student | null>(null);
   const [tempStudentPassword, setTempStudentPassword] = useState('');
 
+  // Special Pets State
+  const [specialPets, setSpecialPets] = useState<SpecialPet[]>([]);
+  const [isSpecialPetModalOpen, setIsSpecialPetModalOpen] = useState(false);
+  const [isAddingSpecialPet, setIsAddingSpecialPet] = useState(false);
+  const [newSpecialPet, setNewSpecialPet] = useState<Partial<SpecialPet>>({
+    name: '',
+    price: 0,
+    imageUrl: '',
+    power: 0
+  });
+
   const [isChestModalOpen, setIsChestModalOpen] = useState(false);
   const [chestReward, setChestReward] = useState<{amount?: number, petId?: number, level: number} | null>(null);
 
@@ -874,6 +921,7 @@ export default function App() {
   const [editingClassName, setEditingClassName] = useState('');
 
   const homeworkFileInputRef = useRef<HTMLInputElement>(null);
+  const specialPetFileInputRef = useRef<HTMLInputElement>(null);
 
   // Timer Logic
   const playBellSound = () => {
@@ -1030,6 +1078,21 @@ export default function App() {
       syncPasswords();
     }
   }, [isTeacher, activeClassId, students, loggedInStudentId]);
+
+  // Special Pet Sync
+  useEffect(() => {
+    if (activeClassId) {
+      const petsQuery = query(collection(db, 'specialPets'), where('classId', '==', activeClassId));
+      const unsubscribePets = onSnapshot(petsQuery, (querySnapshot) => {
+        const fetchedPets: SpecialPet[] = [];
+        querySnapshot.forEach((doc) => {
+          fetchedPets.push({ id: doc.id, ...doc.data() } as SpecialPet);
+        });
+        setSpecialPets(fetchedPets.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
+      });
+      return () => unsubscribePets();
+    }
+  }, [activeClassId]);
 
   // LocalStorage Sync for Guests
   useEffect(() => {
@@ -1341,6 +1404,139 @@ export default function App() {
       console.error('Failed to rename class', error);
       alert(t.renameFailed);
     }
+  };
+
+  const handleCreateSpecialPet = async () => {
+    if (!newSpecialPet.name || !newSpecialPet.imageUrl) {
+      alert('請填寫寵物名字和上傳照片');
+      return;
+    }
+    
+    if (newSpecialPet.price === undefined || newSpecialPet.power === undefined) {
+      alert('請填寫價格和力量數量');
+      return;
+    }
+    
+    if (activeClassId) {
+      try {
+        const petRef = doc(collection(db, 'specialPets'));
+        await setDoc(petRef, {
+          name: newSpecialPet.name,
+          price: Number(newSpecialPet.price),
+          imageUrl: newSpecialPet.imageUrl,
+          power: Number(newSpecialPet.power),
+          id: petRef.id,
+          classId: activeClassId,
+          createdAt: serverTimestamp()
+        });
+        setIsAddingSpecialPet(false);
+        setNewSpecialPet({ name: '', price: 0, imageUrl: '', power: 0 });
+        playSound('success');
+      } catch (e) {
+        console.error("Error creating special pet:", e);
+        alert('保存失敗，請檢查網絡連接');
+      }
+    } else {
+      alert('無法找到班級 ID，請重新登入');
+    }
+  };
+
+  const handleBuySpecialPet = async (pet: SpecialPet) => {
+    if (!loggedInStudentId || !activeClassId) return;
+    
+    const student = students.find(s => s.id === loggedInStudentId);
+    if (!student) return;
+    
+    if (student.coins < pet.price) {
+      alert(t.notEnoughCoins);
+      return;
+    }
+    
+    if (student.ownedSpecialPets?.includes(pet.id)) {
+      alert(t.alreadyOwned);
+      return;
+    }
+    
+    try {
+      const classRef = doc(db, 'classes', activeClassId);
+      const updatedStudents = students.map(s => {
+        if (s.id === loggedInStudentId) {
+          const ownedSpecialPets = [...(s.ownedSpecialPets || []), pet.id];
+          return {
+            ...s,
+            coins: s.coins - pet.price,
+            ownedSpecialPets,
+            equippedSpecialPet: pet.id,
+            equippedPet: null
+          };
+        }
+        return s;
+      });
+      
+      await updateDoc(classRef, { students: updatedStudents });
+      playSound('power');
+    } catch (e) {
+      console.error("Error buying special pet:", e);
+    }
+  };
+
+  const handleEquipSpecialPet = async (petId: string | null) => {
+    if (!loggedInStudentId || !activeClassId) return;
+    
+    try {
+      const classRef = doc(db, 'classes', activeClassId);
+      const updatedStudents = students.map(s => {
+        if (s.id === loggedInStudentId) {
+          return {
+            ...s,
+            equippedSpecialPet: petId,
+            equippedPet: petId ? null : s.equippedPet
+          };
+        }
+        return s;
+      });
+      
+      await updateDoc(classRef, { students: updatedStudents });
+      playSound('success');
+    } catch (e) {
+      console.error("Error equipping special pet:", e);
+    }
+  };
+
+  const handleSpecialPetImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const maxDim = 800;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = (height / width) * maxDim;
+            width = maxDim;
+          } else {
+            width = (width / height) * maxDim;
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setNewSpecialPet({ ...newSpecialPet, imageUrl: dataUrl });
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleCreatePost = async () => {
@@ -1703,7 +1899,7 @@ export default function App() {
         const isOwned = (s.ownedPets || []).includes(petId);
         
         if (isOwned) {
-          return { ...s, equippedPet: petId };
+          return { ...s, equippedPet: petId, equippedSpecialPet: null };
         } else if (pet && (s.coins || 0) >= pet.price) {
           // Purchase new pet
           return { 
@@ -1711,6 +1907,7 @@ export default function App() {
             coins: s.coins - pet.price,
             ownedPets: [...(s.ownedPets || []), petId],
             equippedPet: petId, // Auto-equip on purchase
+            equippedSpecialPet: null
           };
         }
         return s;
@@ -1867,11 +2064,20 @@ export default function App() {
   };
 
   const getPetPower = (student: Student) => {
-    if (!student.ownedPets) return 0;
-    return student.ownedPets.reduce((total, petId) => {
-      const pet = PETS.find(p => p.id === petId);
-      return total + (pet?.power || 0);
-    }, 0);
+    let power = 0;
+    if (student.ownedPets) {
+      power += student.ownedPets.reduce((total, petId) => {
+        const pet = PETS.find(p => p.id === petId);
+        return total + (pet?.power || 0);
+      }, 0);
+    }
+    if (student.ownedSpecialPets) {
+      power += student.ownedSpecialPets.reduce((total, petId) => {
+        const pet = specialPets.find(p => p.id === petId);
+        return total + (pet?.power || 0);
+      }, 0);
+    }
+    return power;
   };
 
   const handleAwardPoints = (skill: Skill) => {
@@ -2174,18 +2380,27 @@ export default function App() {
                             <Trophy className="w-4 h-4" />
                             {t.leaderboard}
                           </button>
-                          {isTeacher && !loggedInStudentId && (
-                            <button 
-                              onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
-                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                                activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                              }`}
-                            >
-                              <Zap className="w-4 h-4" />
-                              {t.bossBattle}
-                            </button>
-                          )}
                         </>
+                      )}
+
+                      <button 
+                        onClick={() => { setIsSpecialPetModalOpen(true); setIsToolboxOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA] transition-colors"
+                      >
+                        <Heart className="w-4 h-4 text-[#F368E0]" />
+                        {t.specialPet}
+                      </button>
+
+                      {isTeacher && !loggedInStudentId && (
+                        <button 
+                          onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                          }`}
+                        >
+                          <Zap className="w-4 h-4" />
+                          {t.bossBattle}
+                        </button>
                       )}
 
                       <div className="h-px bg-[#E1E4E8] mx-2 my-2" />
@@ -2399,7 +2614,14 @@ export default function App() {
                   }}
                   className={`w-full aspect-square bg-[#F1F3F5] rounded-2xl flex items-center justify-center overflow-hidden relative ${((isTeacher && !loggedInStudentId) || isSelf) ? 'cursor-pointer group/avatar' : ''}`}
                 >
-                  {student.equippedPet !== null ? (
+                  {student.equippedSpecialPet ? (
+                    <img 
+                      src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  ) : student.equippedPet !== null ? (
                     <span className="text-5xl animate-bounce-slow">
                       {getPetEmoji(student.equippedPet)}
                     </span>
@@ -2681,7 +2903,9 @@ export default function App() {
                         </div>
                         
                         <div className="relative w-12 h-12 rounded-2xl bg-[#F1F3F5] flex items-center justify-center overflow-hidden shadow-sm">
-                          {student.equippedPet !== null ? (
+                          {student.equippedSpecialPet ? (
+                            <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : student.equippedPet !== null ? (
                             <span className="text-2xl">
                               {getPetEmoji(student.equippedPet)}
                             </span>
@@ -2804,7 +3028,9 @@ export default function App() {
                                       {index + 1}
                                     </span>
                                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                                      {student?.equippedPet !== null ? (
+                                      {student?.equippedSpecialPet ? (
+                                        <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                      ) : student?.equippedPet !== null ? (
                                         <span className="text-xl">
                                           {getPetEmoji(student?.equippedPet)}
                                         </span>
@@ -2884,7 +3110,14 @@ export default function App() {
                       className="bg-white p-2 rounded-2xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                     >
                       <div className="relative w-12 h-12 mx-auto mb-2 bg-[#F1F3F5] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                        {student.equippedPet !== null ? (
+                        {student.equippedSpecialPet ? (
+                          <img 
+                            src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
+                            alt="" 
+                            className="w-full h-full object-cover" 
+                            referrerPolicy="no-referrer" 
+                          />
+                        ) : student.equippedPet !== null ? (
                           <span className="text-3xl">
                             {getPetEmoji(student.equippedPet)}
                           </span>
@@ -3113,7 +3346,14 @@ export default function App() {
             >
               <div className="p-8 text-center border-b border-[#F1F3F5]">
                 <div className="w-20 h-20 bg-[#6C5CE7] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#6C5CE7]/20 overflow-hidden">
-                  {powerModalStudent.equippedPet !== null ? (
+                  {powerModalStudent.equippedSpecialPet ? (
+                    <img 
+                      src={specialPets.find(p => p.id === powerModalStudent.equippedSpecialPet)?.imageUrl} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  ) : powerModalStudent.equippedPet !== null ? (
                     <span className="text-5xl">{getPetEmoji(powerModalStudent.equippedPet)}</span>
                   ) : (
                     <img 
@@ -3327,7 +3567,14 @@ export default function App() {
                   }}
                   className={`relative mx-auto mb-4 w-24 h-24 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden ${loggedInStudentId === selectedStudent.id ? 'cursor-pointer group' : ''}`}
                 >
-                  {selectedStudent.equippedPet !== null ? (
+                  {selectedStudent.equippedSpecialPet ? (
+                    <img 
+                      src={specialPets.find(p => p.id === selectedStudent.equippedSpecialPet)?.imageUrl} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  ) : selectedStudent.equippedPet !== null ? (
                     <span className="text-5xl">{getPetEmoji(selectedStudent.equippedPet)}</span>
                   ) : (
                     <img 
@@ -4224,6 +4471,205 @@ export default function App() {
                           </div>
                         );
                       })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Special Pet Modal */}
+      <AnimatePresence>
+        {isSpecialPetModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center z-[80] p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsSpecialPetModalOpen(false);
+                setIsAddingSpecialPet(false);
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#F368E0]/10 rounded-2xl flex items-center justify-center">
+                    <Heart className="w-6 h-6 text-[#F368E0]" />
+                  </div>
+                  <h2 className="text-2xl font-black text-[#2D3436]">{t.specialPet}</h2>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsSpecialPetModalOpen(false);
+                    setIsAddingSpecialPet(false);
+                  }}
+                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                >
+                  <X className="w-6 h-6 text-[#636E72]" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1 text-center">
+                {isTeacher && !loggedInStudentId && !isAddingSpecialPet && (
+                  <button 
+                    onClick={() => setIsAddingSpecialPet(true)}
+                    className="w-full py-4 border-2 border-dashed border-[#DFE6E9] rounded-2xl flex items-center justify-center gap-2 text-[#F368E0] font-bold hover:bg-[#F368E0]/5 hover:border-[#F368E0] transition-all mb-6"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t.addSpecialPet}
+                  </button>
+                )}
+
+                {isAddingSpecialPet ? (
+                  <div className="space-y-6 text-left">
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petName}</label>
+                      <input 
+                        type="text"
+                        value={newSpecialPet.name}
+                        onChange={(e) => setNewSpecialPet({...newSpecialPet, name: e.target.value})}
+                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                        placeholder={t.petName}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPhoto}</label>
+                      <input 
+                        type="file"
+                        ref={specialPetFileInputRef}
+                        onChange={handleSpecialPetImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => specialPetFileInputRef.current?.click()}
+                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none border-2 border-dashed border-[#E1E4E8] hover:border-[#F368E0] hover:bg-[#F368E0]/5 transition-all flex items-center justify-center gap-2 text-[#636E72] hover:text-[#F368E0]"
+                        >
+                          <Upload className="w-5 h-5" />
+                          {t.uploadImage}
+                        </button>
+                        {newSpecialPet.imageUrl && (
+                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#F368E0] shrink-0">
+                            <img src={newSpecialPet.imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                            <button 
+                              onClick={() => setNewSpecialPet({ ...newSpecialPet, imageUrl: '' })}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPrice}</label>
+                        <input 
+                          type="number"
+                          value={newSpecialPet.price}
+                          onChange={(e) => setNewSpecialPet({...newSpecialPet, price: Math.max(0, parseInt(e.target.value) || 0)})}
+                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPower}</label>
+                        <input 
+                          type="number"
+                          value={newSpecialPet.power}
+                          onChange={(e) => setNewSpecialPet({...newSpecialPet, power: Math.max(0, parseInt(e.target.value) || 0)})}
+                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <button 
+                        onClick={() => setIsAddingSpecialPet(false)}
+                        className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                      >
+                        {t.cancel}
+                      </button>
+                      <button 
+                        onClick={handleCreateSpecialPet}
+                        className="flex-1 py-4 bg-[#F368E0] text-white rounded-2xl font-black shadow-lg shadow-[#F368E0]/30 hover:bg-[#D6308E] transition-colors"
+                      >
+                        {t.save}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {specialPets.length === 0 && (
+                      <div className="col-span-full text-center py-12">
+                        <p className="text-[#B2BEC3] font-bold">目前沒有特別寵物</p>
+                      </div>
+                    )}
+                    {specialPets.map((pet) => {
+                      const student = students.find(s => s.id === loggedInStudentId);
+                      const isOwned = student?.ownedSpecialPets?.includes(pet.id);
+                      
+                      return (
+                        <div key={pet.id} className="bg-[#F8F9FA] rounded-[2.5rem] p-6 border-2 border-[#F1F3F5] flex flex-col items-center gap-4 relative">
+                          {isTeacher && !loggedInStudentId && (
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm('確定要刪除這隻寵物嗎？')) {
+                                  try { await deleteDoc(doc(db, 'specialPets', pet.id)); } catch (e) {}
+                                }
+                              }}
+                              className="absolute top-4 right-4 p-2 text-[#D63031] hover:bg-[#D63031]/10 rounded-xl transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          
+                          <div className="w-32 h-32 rounded-3xl overflow-hidden bg-white shadow-md border-2 border-white flex items-center justify-center">
+                            <img src={pet.imageUrl} className="w-full h-full object-cover" alt={pet.name} referrerPolicy="no-referrer" />
+                          </div>
+                          
+                          <div className="text-center">
+                            <h3 className="text-xl font-black text-[#2D3436]">{pet.name}</h3>
+                            <div className="flex items-center justify-center gap-2 mt-1">
+                              <span className="px-2 py-0.5 bg-[#6C5CE7]/10 text-[#6C5CE7] rounded-lg text-[10px] font-black">
+                                +{pet.power} Power
+                              </span>
+                            </div>
+                          </div>
+
+                          {!isTeacher && loggedInStudentId && (
+                            <button 
+                              onClick={() => handleBuySpecialPet(pet)}
+                              disabled={isOwned}
+                              className={`w-full py-3 rounded-2xl font-black transition-all flex items-center justify-center gap-2 ${
+                                isOwned 
+                                  ? 'bg-[#00B894]/10 text-[#00B894] cursor-default' 
+                                  : 'bg-[#F1C40F] text-white shadow-lg shadow-[#F1C40F]/30 hover:scale-105 active:scale-95'
+                              }`}
+                            >
+                              {isOwned ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  {t.alreadyOwned}
+                                </>
+                              ) : (
+                                <>
+                                  <Coins className="w-4 h-4 fill-current" />
+                                  {pet.price} {t.buy}
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
