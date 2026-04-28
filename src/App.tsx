@@ -1780,15 +1780,17 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-8 bg-white rounded-[40px] border-4 border-[#00B894] shadow-2xl shadow-[#00B894]/10"
+            className={`p-8 rounded-[40px] border-4 border-[#00B894] shadow-2xl ${
+              theme === 'dark' ? 'bg-[#353B48] shadow-[#00B894]/5' : 'bg-white shadow-[#00B894]/10'
+            }`}
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-[#00B894]/20' : 'bg-[#00B894]/10'}`}>
                 <Lock className="text-[#00B894] w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-black text-[#2D3436]">{t.loginAsStudent}</h2>
-                <p className="text-xs text-[#636E72] font-bold uppercase tracking-widest">{t.enterPassword}</p>
+                <h2 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.loginAsStudent}</h2>
+                <p className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.enterPassword}</p>
               </div>
             </div>
             
@@ -1803,7 +1805,9 @@ export default function App() {
                     setStudentLoginPassword(val);
                   }}
                   placeholder={t.passwordPlaceholder}
-                  className="w-full bg-[#F8F9FA] border-2 border-[#E1E4E8] rounded-2xl px-6 py-5 font-black text-center tracking-[0.8em] outline-none focus:border-[#00B894] transition-all text-2xl"
+                  className={`w-full border-2 rounded-2xl px-6 py-5 font-black text-center tracking-[0.8em] outline-none focus:border-[#00B894] transition-all text-2xl ${
+                    theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white shadow-inner' : 'bg-[#F8F9FA] border-[#E1E4E8] text-[#2D3436]'
+                  }`}
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#B2BEC3] pointer-events-none">
                   <LogIn className="w-full h-full" />
@@ -2479,7 +2483,7 @@ export default function App() {
                 isToolboxOpen 
                   ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
                   : theme === 'dark' 
-                    ? 'bg-[#333333] text-gray-200 border border-[#444444] hover:bg-[#444444]'
+                    ? 'bg-[#2D3436] text-gray-200 border border-[#4A5568] hover:bg-[#4A5568]'
                     : 'bg-white text-[#2D3436] border border-[#E1E4E8] hover:bg-[#F8F9FA]'
               }`}
             >
@@ -2559,12 +2563,12 @@ export default function App() {
                         )}
                       </div>
 
-                      <div className={`h-px mx-2 mb-2 ${theme === 'dark' ? 'bg-[#444444]' : 'bg-[#E1E4E8]'}`} />
+                      <div className={`h-px mx-2 mb-2 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
 
                       <button 
                         onClick={() => { setActiveTab('classroom'); setIsToolboxOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                         }`}
                       >
                         <Users className="w-4 h-4" />
@@ -2576,7 +2580,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('story'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <BookOpen className="w-4 h-4" />
@@ -2585,7 +2589,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('reports'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <Award className="w-4 h-4" />
@@ -2594,7 +2598,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('leaderboard'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <Trophy className="w-4 h-4" />
@@ -2606,7 +2610,7 @@ export default function App() {
                       <button 
                         onClick={() => { setIsSpecialPetModalOpen(true); setIsToolboxOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                         }`}
                       >
                         <Heart className="w-4 h-4 text-[#F368E0]" />
@@ -2617,7 +2621,7 @@ export default function App() {
                         <button 
                           onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                           }`}
                         >
                           <Zap className="w-4 h-4" />
@@ -2625,7 +2629,7 @@ export default function App() {
                         </button>
                       )}
 
-                      <div className={`h-px mx-2 my-2 ${theme === 'dark' ? 'bg-[#444444]' : 'bg-[#E1E4E8]'}`} />
+                      <div className={`h-px mx-2 my-2 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
 
                       {(!loggedInStudentId || isTeacher) && (
                         <button 
@@ -2634,7 +2638,7 @@ export default function App() {
                             setIsToolboxOpen(false);
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                             theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                             theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                           }`}
                         >
                           <Clock className="w-4 h-4 text-[#00B894]" />
@@ -2647,7 +2651,9 @@ export default function App() {
                           setIsHomeworkModalOpen(true);
                           setIsToolboxOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA]"
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                          theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
                       >
                         <BookOpen className="w-4 h-4 text-[#6C5CE7]" />
                         {t.homework}
@@ -2661,7 +2667,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             {loggedInStudentId && (
               <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border shadow-sm ${
-                theme === 'dark' ? 'bg-[#1E1E1E] border-[#333333]' : 'bg-white border-[#E1E4E8]'
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
               }`}>
                 <div className="flex items-center gap-1.5">
                   <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
@@ -2669,7 +2675,7 @@ export default function App() {
                     {students.find(s => s.id === loggedInStudentId)?.coins || 0}
                   </span>
                 </div>
-                <div className={`w-px h-4 ${theme === 'dark' ? 'bg-[#333333]' : 'bg-[#E1E4E8]'}`} />
+                <div className={`w-px h-4 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
                 <button 
                   onClick={() => setIsChestModalOpen(true)}
                   className="flex items-center gap-1.5 hover:scale-105 transition-transform"
@@ -2986,17 +2992,17 @@ export default function App() {
           >
             {/* Create Post */}
             {isTeacher && (
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#E1E4E8]">
+                <div className={`bg-white rounded-3xl p-6 shadow-sm border border-[#E1E4E8] ${theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white'}`}>
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#DFE6E9] flex-shrink-0" />
+                  <div className={`w-12 h-12 rounded-full flex-shrink-0 ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#DFE6E9]'}`} />
                   <div className="flex-1">
                     <textarea 
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder={t.postPlaceholder}
-                      className="w-full border-none focus:ring-0 text-lg resize-none h-24 placeholder-[#B2BEC3]"
+                      className={`w-full border-none focus:ring-0 text-lg resize-none h-24 placeholder-[#B2BEC3] bg-transparent ${theme === 'dark' ? 'text-white' : ''}`}
                     />
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#F1F3F5]">
+                    <div className={`flex items-center justify-between mt-4 pt-4 border-t ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
                       <div className="flex gap-2">
                         <button className="p-2 hover:bg-[#F1F3F5] rounded-lg transition-colors text-[#00B894] flex items-center gap-2 font-semibold text-sm">
                           <Camera className="w-5 h-5" />
@@ -3208,62 +3214,76 @@ export default function App() {
             className="max-w-4xl mx-auto"
           >
             {!bossDifficulty ? (
-              <div className="bg-white rounded-[3rem] p-12 shadow-sm border border-[#E1E4E8] text-center">
-                <h2 className="text-3xl font-black mb-8">{t.bossBattle}</h2>
+              <div className={`rounded-[3rem] p-12 shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
+                <h2 className={`text-3xl font-black mb-8 ${theme === 'dark' ? 'text-white' : ''}`}>{t.bossBattle}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <button 
                     onClick={() => startBossBattle('simple')}
-                    className="p-8 rounded-[2rem] border-4 border-[#00B894] hover:bg-[#00B894]/5 transition-all group"
+                    className={`p-8 rounded-[2rem] border-4 transition-all group ${
+                      theme === 'dark' ? 'bg-[#2D3436] border-[#00B894] hover:bg-[#00B894]/5' : 'bg-white border-[#00B894] hover:bg-[#00B894]/5'
+                    }`}
                   >
                     <div className="text-4xl mb-4">🦖</div>
                     <div className="text-2xl font-black text-[#00B894]">{t.simple}</div>
-                    <div className="text-[#636E72] font-bold mt-2">HP: 3500</div>
+                    <div className={`font-bold mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>HP: 3500</div>
                   </button>
                   <button 
                     onClick={() => startBossBattle('medium')}
-                    className="p-8 rounded-[2rem] border-4 border-[#F1C40F] hover:bg-[#F1C40F]/5 transition-all group"
+                    className={`p-8 rounded-[2rem] border-4 transition-all group ${
+                      theme === 'dark' ? 'bg-[#2D3436] border-[#F1C40F] hover:bg-[#F1C40F]/5' : 'bg-white border-[#F1C40F] hover:bg-[#F1C40F]/5'
+                    }`}
                   >
                     <div className="text-4xl mb-4">🐉</div>
                     <div className="text-2xl font-black text-[#F1C40F]">{t.medium}</div>
-                    <div className="text-[#636E72] font-bold mt-2">HP: 5000</div>
+                    <div className={`font-bold mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>HP: 5000</div>
                   </button>
                   <button 
                     onClick={() => startBossBattle('hard')}
-                    className="p-8 rounded-[2rem] border-4 border-[#E74C3C] hover:bg-[#E74C3C]/5 transition-all group"
+                    className={`p-8 rounded-[2rem] border-4 transition-all group ${
+                      theme === 'dark' ? 'bg-[#2D3436] border-[#E74C3C] hover:bg-[#E74C3C]/5' : 'bg-white border-[#E74C3C] hover:bg-[#E74C3C]/5'
+                    }`}
                   >
                     <div className="text-4xl mb-4">👹</div>
                     <div className="text-2xl font-black text-[#E74C3C]">{t.hard}</div>
-                    <div className="text-[#636E72] font-bold mt-2">HP: 8800</div>
+                    <div className={`font-bold mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>HP: 8800</div>
                   </button>
                   <button 
                     onClick={() => startBossBattle('demon')}
-                    className="p-8 rounded-[2rem] border-4 border-[#9B59B6] hover:bg-[#9B59B6]/5 transition-all group"
+                    className={`p-8 rounded-[2rem] border-4 transition-all group ${
+                      theme === 'dark' ? 'bg-[#2D3436] border-[#9B59B6] hover:bg-[#9B59B6]/5' : 'bg-white border-[#9B59B6] hover:bg-[#9B59B6]/5'
+                    }`}
                   >
                     <div className="text-4xl mb-4">👿</div>
                     <div className="text-2xl font-black text-[#9B59B6]">{t.demon}</div>
-                    <div className="text-[#636E72] font-bold mt-2">HP: 12500</div>
+                    <div className={`font-bold mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>HP: 12500</div>
                   </button>
                 </div>
               </div>
             ) : !bossCombatStarted ? (
-              <div className="bg-white rounded-[3rem] p-12 shadow-sm border border-[#E1E4E8] text-center">
+              <div className={`rounded-[3rem] p-12 shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
                 <div className="flex items-center gap-4 mb-8">
                   <button 
                     onClick={() => setBossDifficulty(null)}
-                    className="p-3 bg-[#F1F3F5] rounded-2xl hover:bg-[#E1E4E8] transition-all"
+                    className={`p-3 rounded-2xl transition-all ${theme === 'dark' ? 'bg-[#2D3436] hover:bg-[#4A5568]' : 'bg-[#F1F3F5] hover:bg-[#E1E4E8]'}`}
                   >
                     <X className="w-5 h-5 text-[#636E72]" />
                   </button>
-                  <h2 className="text-3xl font-black">{t.bossBattle} - 戰鬥設定</h2>
+                  <h2 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : ''}`}>{t.bossBattle} - 戰鬥設定</h2>
                 </div>
 
                 <div className="max-w-md mx-auto mb-10">
-                  <label className="block text-sm font-black text-[#636E72] uppercase tracking-widest mb-3">怪物血量 (HP)</label>
+                  <label className={`block text-sm font-black uppercase tracking-widest mb-3 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>怪物血量 (HP)</label>
                   <input 
                     type="number"
                     value={customBossHp}
                     onChange={(e) => setCustomBossHp(Math.max(1, parseInt(e.target.value) || 0))}
-                    className="w-full bg-[#F1F3F5] rounded-3xl p-6 text-2xl font-black text-center border-4 border-[#6C5CE7] focus:ring-4 focus:ring-[#6C5CE7]/20 transition-all outline-none"
+                    className={`w-full rounded-3xl p-6 text-2xl font-black text-center border-4 border-[#6C5CE7] focus:ring-4 focus:ring-[#6C5CE7]/20 transition-all outline-none ${
+                        theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                    }`}
                   />
                   <p className="mt-2 text-xs text-gray-500 font-bold">預設血量: {
                     bossDifficulty === 'simple' ? 3500 :
@@ -3274,7 +3294,7 @@ export default function App() {
 
                 <div className="mb-10">
                   <div className="flex justify-between items-center mb-4 px-2">
-                    <label className="text-sm font-black text-[#636E72] uppercase tracking-widest">選擇參戰學生 ({selectedCombatStudents.size}/{students.length})</label>
+                    <label className={`text-sm font-black uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>選擇參戰學生 ({selectedCombatStudents.size}/{students.length})</label>
                     <button 
                       onClick={() => {
                         if (selectedCombatStudents.size === students.length) {
@@ -3296,10 +3316,10 @@ export default function App() {
                         className={`group relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all ${
                           selectedCombatStudents.has(student.id)
                             ? 'bg-[#6C5CE7]/10 border-[#6C5CE7] shadow-md'
-                            : 'bg-white border-[#E1E4E8] grayscale opacity-40 hover:opacity-70'
+                            : theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] grayscale opacity-40 hover:opacity-70' : 'bg-white border-[#E1E4E8] grayscale opacity-40 hover:opacity-70'
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#F1F3F5]">
+                        <div className={`w-8 h-8 rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-[#353B48]' : 'bg-[#F1F3F5]'}`}>
                           {student.equippedSpecialPet ? (
                             <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} className="w-full h-full object-cover" alt="" />
                           ) : student.equippedPet !== null ? (
@@ -3333,17 +3353,21 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-[#E1E4E8] text-center relative overflow-hidden">
+                <div className={`rounded-[3rem] p-8 shadow-sm border text-center relative overflow-hidden ${
+                  theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                }`}>
                   {isBossDefeated && (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="absolute inset-0 bg-white/95 backdrop-blur-md z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar"
+                      className={`absolute inset-0 z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar backdrop-blur-md ${
+                        theme === 'dark' ? 'bg-[#2D3436]/95' : 'bg-white/95'
+                      }`}
                     >
                       <div className="flex flex-col items-center py-8 w-full max-w-md">
                         <Trophy className="w-20 h-20 text-[#F1C40F] mb-4 shrink-0" />
-                        <h2 className="text-4xl font-black text-[#2D3436] mb-2">{t.victory}</h2>
-                        <p className="text-[#636E72] font-bold mb-8">{t.rewards}</p>
+                        <h2 className={`text-4xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.victory}</h2>
+                        <p className={`font-bold mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.rewards}</p>
                         
                         <div className="w-full space-y-3 mb-8">
                           {Object.entries(damageDealt)
@@ -3351,14 +3375,16 @@ export default function App() {
                             .map(([id, damage], index) => {
                               const student = students.find(s => s.id === id);
                               return (
-                                <div key={id} className="flex items-center justify-between bg-[#F8F9FA] p-4 rounded-2xl border border-[#E1E4E8]">
+                                <div key={id} className={`flex items-center justify-between p-4 rounded-2xl border ${
+                                  theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                                }`}>
                                   <div className="flex items-center gap-3">
                                     <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white ${
                                       index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#DFE6E9] text-[#636E72]'
                                     }`}>
                                       {index + 1}
                                     </span>
-                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-white'}`}>
                                       {student?.equippedSpecialPet ? (
                                         <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                       ) : student?.equippedPet !== null ? (
@@ -3369,7 +3395,7 @@ export default function App() {
                                         <img src={student?.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                       )}
                                     </div>
-                                    <span className="font-bold">{student?.name}</span>
+                                    <span className={`font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{student?.name}</span>
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <span className="text-xs font-black text-[#636E72]">{damage} DMG</span>
@@ -3413,10 +3439,10 @@ export default function App() {
 
                   <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-end mb-2">
-                      <span className="text-sm font-black text-[#636E72] uppercase tracking-wider">{t.bossHp}</span>
-                      <span className="text-lg font-black text-[#2D3436]">{bossHp} / {maxBossHp}</span>
+                       <span className={`text-sm font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.bossHp}</span>
+                       <span className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{bossHp} / {maxBossHp}</span>
                     </div>
-                    <div className="h-6 bg-[#F1F3F5] rounded-full overflow-hidden border-2 border-[#E1E4E8]">
+                    <div className={`h-6 rounded-full overflow-hidden border-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'}`}>
                       <motion.div 
                         initial={{ width: '100%' }}
                         animate={{ width: `${(bossHp / maxBossHp) * 100}%` }}
@@ -3437,9 +3463,11 @@ export default function App() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleAttackBoss(student)}
-                      className="bg-white p-2 rounded-2xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative cursor-pointer flex flex-col items-center"
+                      className={`p-2 rounded-2xl border shadow-sm hover:shadow-md transition-all group relative cursor-pointer flex flex-col items-center ${
+                        theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                      }`}
                     >
-                      <div className="relative w-12 h-12 mb-2 bg-[#F1F3F5] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                      <div className={`relative w-12 h-12 mb-2 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'}`}>
                         {student.equippedSpecialPet ? (
                           <img 
                             src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
@@ -3460,8 +3488,8 @@ export default function App() {
                           />
                         )}
                       </div>
-                      <p className="font-bold text-[10px] text-[#2D3436] truncate w-full text-center">{student.name}</p>
-                      <div className="mt-1 flex items-center justify-center gap-1 text-[9px] font-black text-[#6C5CE7] uppercase tracking-wider">
+                      <p className={`font-bold text-[10px] truncate w-full text-center ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>{student.name}</p>
+                      <div className={`mt-1 flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-[#a29bfe]' : 'text-[#6C5CE7]'}`}>
                         <Zap className="w-2.5 h-2.5 fill-current" />
                         {getPetPower(student)}
                       </div>
@@ -3504,26 +3532,36 @@ export default function App() {
             className="max-w-4xl mx-auto"
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總分數</p>
+              <div className={`p-6 rounded-[2rem] shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>總分數</p>
                 <p className="text-3xl font-black text-[#00B894]">{totalPoints}</p>
               </div>
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總金幣</p>
+              <div className={`p-6 rounded-[2rem] shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>總金幣</p>
                 <p className="text-3xl font-black text-[#F39C12]">{students.reduce((acc, s) => acc + (s.coins || 0), 0)}</p>
               </div>
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">總經驗值</p>
+              <div className={`p-6 rounded-[2rem] shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>總經驗值</p>
                 <p className="text-3xl font-black text-[#6C5CE7]">{students.reduce((acc, s) => acc + (s.points * 10), 0)}</p>
               </div>
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#E1E4E8] text-center">
-                <p className="text-[10px] font-bold text-[#636E72] uppercase tracking-wider mb-1">{t.studentCount}</p>
+              <div className={`p-6 rounded-[2rem] shadow-sm border text-center ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.studentCount}</p>
                 <p className="text-3xl font-black text-[#0984E3]">{students.length}</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-[#E1E4E8] overflow-hidden">
-              <div className="p-8 border-b border-[#F1F3F5]">
+            <div className={`rounded-[2.5rem] shadow-sm border overflow-hidden ${
+              theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+            }`}>
+              <div className={`p-8 border-b ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
                 <h2 className="text-xl font-bold">{t.studentPerformance}</h2>
               </div>
               <div className="p-4">
@@ -3583,7 +3621,9 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden"
+              className={`w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
               {chestReward ? (
                 <div className="p-8 text-center">
@@ -3598,7 +3638,7 @@ export default function App() {
                       <Coins className="w-12 h-12 text-white fill-current" />
                     )}
                   </motion.div>
-                  <h2 className="text-3xl font-black text-[#2D3436] mb-2">{t.congratulations}</h2>
+                  <h2 className={`text-3xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.congratulations}</h2>
                   {chestReward.petId ? (
                     <p className="text-3xl font-black text-[#6C5CE7] mb-6">
                       {t.newPet}{t[`pet_${chestReward.petId}`] || PETS.find(p => p.id === chestReward.petId)?.name}
@@ -3627,14 +3667,16 @@ export default function App() {
                   
                   <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     {CHESTS.map((chest) => (
-                      <div key={chest.level} className="bg-[#F8F9FA] p-5 rounded-3xl border-2 border-[#E1E4E8] hover:border-[#6C5CE7] transition-all group">
+                      <div key={chest.level} className={`p-5 rounded-3xl border-2 hover:border-[#6C5CE7] transition-all group ${
+                        theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                      }`}>
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                               <Gift className="w-6 h-6 text-[#6C5CE7]" />
                             </div>
                             <div>
-                              <h3 className="font-black text-[#2D3436]">Level {chest.level} {t.chest}</h3>
+                              <h3 className={`font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>Level {chest.level} {t.chest}</h3>
                               <div className="flex items-center gap-1 text-[#6C5CE7] font-bold text-sm">
                                 <Medal className="w-3 h-3 fill-current" />
                                 {chest.cost} {t.medals}
@@ -3690,9 +3732,11 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl relative overflow-hidden"
+              className={`w-full max-sm rounded-[2.5rem] shadow-2xl relative overflow-hidden ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <div className="p-8 text-center border-b border-[#F1F3F5]">
+              <div className={`p-8 text-center border-b ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
                 <div className="w-20 h-20 bg-[#6C5CE7] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#6C5CE7]/20 overflow-hidden">
                   {powerModalStudent.equippedSpecialPet ? (
                     <img 
@@ -3712,32 +3756,42 @@ export default function App() {
                     />
                   )}
                 </div>
-                <h2 className="text-2xl font-bold">
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : ''}`}>
                   {powerModalMode === 'pet' ? t.yourPet : t.changeAvatar}
                 </h2>
-                <p className="text-[#636E72] mt-1">
+                <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'} mt-1`}>
                   {powerModalMode === 'pet' 
                     ? t.choosePetFor.replace('{name}', powerModalStudent.name) 
                     : t.chooseAvatarFor.replace('{name}', powerModalStudent.name)}
                 </p>
                 {powerModalMode === 'pet' && (
-                  <div className="mt-4 inline-flex items-center gap-2 bg-[#F1C40F]/10 px-4 py-2 rounded-2xl border border-[#F1C40F]/20">
+                  <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border ${
+                    theme === 'dark' ? 'bg-[#F1C40F]/10 border-[#F1C40F]/20' : 'bg-[#F1C40F]/10 border-[#F1C40F]/20'
+                  }`}>
                     <Coins className="w-4 h-4 text-[#F1C40F] fill-current" />
                     <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} {t.coins}</span>
                   </div>
                 )}
               </div>
               
-                <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] flex gap-4 justify-center">
+                <div className={`p-4 border-b flex gap-4 justify-center ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
                   <button 
                     onClick={() => setPowerModalMode('avatar')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'avatar' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        powerModalMode === 'avatar' 
+                            ? 'bg-[#6C5CE7] text-white' 
+                            : theme === 'dark' ? 'bg-[#353B48] text-gray-400' : 'bg-white text-[#636E72]'
+                    }`}
                   >
                     {t.baseAvatar}
                   </button>
                   <button 
                     onClick={() => setPowerModalMode('pet')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${powerModalMode === 'pet' ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#636E72]'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        powerModalMode === 'pet' 
+                            ? 'bg-[#6C5CE7] text-white' 
+                            : theme === 'dark' ? 'bg-[#353B48] text-gray-400' : 'bg-white text-[#636E72]'
+                    }`}
                   >
                     {t.petAvatar}
                   </button>
@@ -3745,7 +3799,7 @@ export default function App() {
 
                 {powerModalMode === 'pet' ? (
                 <>
-                  <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] overflow-x-auto whitespace-nowrap flex gap-2">
+                  <div className={`p-4 border-b overflow-x-auto whitespace-nowrap flex gap-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tier => {
                       const currentStage = Math.floor(powerModalStudent.points / 30);
                       const isLocked = tier > 1 && currentStage < tier;
@@ -3759,8 +3813,8 @@ export default function App() {
                             selectedPetTier === tier 
                               ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
                               : isLocked
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                                : 'bg-white text-[#636E72] border border-[#E1E4E8] hover:border-[#6C5CE7]/30'
+                                ? (theme === 'dark' ? 'bg-[#353B48] text-gray-600 cursor-not-allowed opacity-60' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60')
+                                : theme === 'dark' ? 'bg-[#353B48] text-gray-400 border border-[#4A5568] hover:border-[#6C5CE7]/30' : 'bg-white text-[#636E72] border border-[#E1E4E8] hover:border-[#6C5CE7]/30'
                           }`}
                         >
                           {isLocked && <Lock className="w-3 h-3" />}
@@ -3769,6 +3823,7 @@ export default function App() {
                       );
                     })}
                   </div>
+
                   
                   <div className="p-8 grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
                     {(() => {
@@ -3940,9 +3995,11 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative overflow-hidden"
+              className={`w-full max-w-lg rounded-[2.5rem] shadow-2xl relative overflow-hidden ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <div className="p-8 text-center border-b border-[#F1F3F5]">
+              <div className={`p-8 text-center border-b ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
                 <div 
                   onClick={() => {
                     if ((isTeacher && !loggedInStudentId) || loggedInStudentId === selectedStudent.id) {
@@ -3951,7 +4008,9 @@ export default function App() {
                       setSelectedStudent(null);
                     }
                   }}
-                  className={`relative mx-auto mb-4 w-24 h-24 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden ${((isTeacher && !loggedInStudentId) || loggedInStudentId === selectedStudent.id) ? 'cursor-pointer group' : ''}`}
+                  className={`relative mx-auto mb-4 w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ${
+                    theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'
+                  } ${((isTeacher && !loggedInStudentId) || loggedInStudentId === selectedStudent.id) ? 'cursor-pointer group' : ''}`}
                 >
                   {selectedStudent.equippedSpecialPet ? (
                     <img 
@@ -3976,7 +4035,7 @@ export default function App() {
                     </div>
                   )}
                 </div>
-                <h2 className="text-2xl font-bold">{t.feedbackFor} {selectedStudent.name}</h2>
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.feedbackFor} {selectedStudent.name}</h2>
                 
                 <div className="flex justify-center gap-4 mt-6">
                   <button 
@@ -3984,7 +4043,7 @@ export default function App() {
                     className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
                       modalTab === 'positive' 
                         ? 'bg-[#00B894] text-white shadow-lg shadow-[#00B894]/20' 
-                        : 'bg-[#F1F3F5] text-[#636E72]'
+                        : theme === 'dark' ? 'bg-[#2D3436] text-gray-400' : 'bg-[#F1F3F5] text-[#636E72]'
                     }`}
                   >
                     {t.positive}
@@ -3994,7 +4053,7 @@ export default function App() {
                     className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
                       modalTab === 'needsWork' 
                         ? 'bg-[#D63031] text-white shadow-lg shadow-[#D63031]/20' 
-                        : 'bg-[#F1F3F5] text-[#636E72]'
+                        : theme === 'dark' ? 'bg-[#2D3436] text-gray-400' : 'bg-[#F1F3F5] text-[#636E72]'
                     }`}
                   >
                     {t.needsWork}
@@ -4010,15 +4069,19 @@ export default function App() {
                     onClick={() => handleAwardPoints(skill)}
                     className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all group ${
                       (!isTeacher || !!loggedInStudentId) ? 'opacity-50 cursor-not-allowed' :
-                      modalTab === 'positive' ? 'hover:bg-[#F0FFF4] hover:text-[#00B894]' : 'hover:bg-[#FFF5F5] hover:text-[#D63031]'
+                      modalTab === 'positive' 
+                        ? (theme === 'dark' ? 'hover:bg-[#00B894]/10 hover:text-[#00B894]' : 'hover:bg-[#F0FFF4] hover:text-[#00B894]') 
+                        : (theme === 'dark' ? 'hover:bg-[#D63031]/10 hover:text-[#D63031]' : 'hover:bg-[#FFF5F5] hover:text-[#D63031]')
                     }`}
                   >
-                    <div className={`w-14 h-14 bg-[#F1F3F5] rounded-2xl flex items-center justify-center transition-colors ${
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
+                      theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'
+                    } ${
                       modalTab === 'positive' ? 'group-hover:bg-[#00B894]' : 'group-hover:bg-[#D63031]'
                     } group-hover:text-white`}>
                       <SkillIcon name={skill.icon} className="w-7 h-7" />
                     </div>
-                    <span className="text-xs font-bold text-center leading-tight">{t[`skill_${skill.id}`] || skill.name}</span>
+                    <span className={`text-xs font-bold text-center leading-tight ${theme === 'dark' ? 'text-gray-200' : ''}`}>{t[`skill_${skill.id}`] || skill.name}</span>
                     <span className={`text-[10px] font-black ${skill.points > 0 ? 'text-[#00B894]' : 'text-[#D63031]'}`}>
                       {skill.points > 0 ? `+${skill.points}` : skill.points}
                     </span>
@@ -4026,10 +4089,10 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="p-6 bg-[#F8F9FA] flex justify-center">
+              <div className={`p-6 flex justify-center ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F8F9FA]'}`}>
                 <button 
                   onClick={closeModal}
-                  className="text-sm font-bold text-[#636E72] hover:text-[#2D3436]"
+                  className={`text-sm font-bold transition-colors ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-[#636E72] hover:text-[#2D3436]'}`}
                 >
                   {t.cancel}
                 </button>
@@ -4054,20 +4117,24 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8"
+              className={`w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8 ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <h2 className="text-2xl font-bold mb-6">{t.addStudent}</h2>
+              <h2 className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : ''}`}>{t.addStudent}</h2>
               <form onSubmit={handleAddStudent}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-[#636E72] mb-2">{t.studentName}</label>
+                    <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.studentName}</label>
                     <input 
                       autoFocus
                       type="text" 
                       value={newStudentName}
                       onChange={(e) => setNewStudentName(e.target.value)}
                       placeholder={t.fullNamePlaceholder}
-                      className="w-full px-4 py-3 rounded-xl border border-[#E1E4E8] focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all"
+                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all ${
+                        theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white' : 'border-[#E1E4E8]'
+                      }`}
                     />
                   </div>
                   <div className="flex gap-3 pt-4">
@@ -4107,10 +4174,12 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8"
+              className={`w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8 ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">{t.editStudent}</h2>
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{t.editStudent}</h2>
                 <button 
                   onClick={() => handleDeleteStudent(editingStudent.id)}
                   className="p-2 text-[#D63031] hover:bg-[#D63031]/10 rounded-xl transition-colors"
@@ -4123,14 +4192,16 @@ export default function App() {
               <form onSubmit={handleUpdateStudent}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-[#636E72] mb-2">{t.studentName}</label>
+                    <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.studentName}</label>
                     <input 
                       autoFocus
                       type="text" 
                       value={editStudentName}
                       onChange={(e) => setEditStudentName(e.target.value)}
                       placeholder={t.fullNamePlaceholder}
-                      className="w-full px-4 py-3 rounded-xl border border-[#E1E4E8] focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all"
+                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[#00B894] focus:border-transparent outline-none transition-all ${
+                        theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white' : 'border-[#E1E4E8]'
+                      }`}
                     />
                   </div>
                   <div className="flex gap-3 pt-4">
@@ -4170,13 +4241,15 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-xs rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8 text-center"
+              className={`w-full max-w-xs rounded-[2.5rem] shadow-2xl relative overflow-hidden p-8 text-center ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
               <div className="w-16 h-16 bg-[#F1C40F]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Coins className="w-8 h-8 text-[#F1C40F] fill-current" />
               </div>
-              <h2 className="text-xl font-bold mb-2">獎勵金幣</h2>
-              <p className="text-sm text-[#636E72] mb-6">為 {coinsModalStudent.name} 選擇獎勵金額</p>
+              <h2 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : ''}`}>獎勵金幣</h2>
+              <p className={`text-sm mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>為 {coinsModalStudent.name} 選擇獎勵金額</p>
               
               <div className="grid grid-cols-2 gap-3">
                 {[10, 20, 30, 50, 100].map(amount => (
@@ -4186,7 +4259,9 @@ export default function App() {
                       handleUpdateCoins(coinsModalStudent.id, amount);
                       setCoinsModalStudent(null);
                     }}
-                    className="py-3 bg-[#F8F9FA] hover:bg-[#F1C40F]/10 hover:text-[#F39C12] rounded-2xl font-black transition-all active:scale-95 border border-[#E1E4E8] hover:border-[#F1C40F]/30"
+                    className={`py-3 rounded-2xl font-black transition-all active:scale-95 border ${
+                      theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white hover:bg-[#F1C40F]/10 hover:text-[#F39C12] hover:border-[#F1C40F]/30' : 'bg-[#F8F9FA] border-[#E1E4E8] hover:bg-[#F1C40F]/10 hover:text-[#F39C12] hover:border-[#F1C40F]/30'
+                    }`}
                   >
                     +{amount}
                   </button>
@@ -4195,7 +4270,7 @@ export default function App() {
               
               <button 
                 onClick={() => setCoinsModalStudent(null)}
-                className="mt-6 text-sm font-bold text-[#636E72] hover:text-[#2D3436]"
+                className={`mt-6 text-sm font-bold transition-colors ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-[#636E72] hover:text-[#2D3436]'}`}
               >
                 {t.cancel}
               </button>
@@ -4206,12 +4281,12 @@ export default function App() {
 
       {/* Mobile Nav */}
       <footer className={`fixed bottom-0 left-0 right-0 border-t sm:hidden z-20 transition-colors ${
-        theme === 'dark' ? 'bg-[#1E1E1E] border-[#444444]' : 'bg-white border-[#E1E4E8]'
+        theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
       }`}>
         <div className="flex justify-around p-2">
           <button 
             onClick={() => setActiveTab('classroom')}
-            className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'classroom' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
+            className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'classroom' ? 'text-[#00B894]' : theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}
           >
             <Users className="w-6 h-6" />
             <span className="text-[10px] font-bold mt-1">{t.classroom}</span>
@@ -4220,14 +4295,14 @@ export default function App() {
             <>
               <button 
                 onClick={() => setActiveTab('story')}
-                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'story' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
+                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'story' ? 'text-[#00B894]' : theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}
               >
                 <BookOpen className="w-6 h-6" />
                 <span className="text-[10px] font-bold mt-1">{t.story}</span>
               </button>
               <button 
                 onClick={() => setActiveTab('reports')}
-                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'reports' ? 'text-[#00B894]' : 'text-[#636E72]'}`}
+                className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'reports' ? 'text-[#00B894]' : theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}
               >
                 <Award className="w-6 h-6" />
                 <span className="text-[10px] font-bold mt-1">{t.reports}</span>
@@ -4252,11 +4327,15 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[40px] p-10 shadow-2xl max-w-sm w-full text-center"
+              className={`relative rounded-[40px] p-10 shadow-2xl max-w-sm w-full text-center ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
               <button 
                 onClick={() => setIsTimerModalOpen(false)}
-                className="absolute top-6 right-6 p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                className={`absolute top-6 right-6 p-2 rounded-xl transition-colors ${
+                  theme === 'dark' ? 'hover:bg-[#4A5568]' : 'hover:bg-[#F1F3F5]'
+                }`}
               >
                 <X className="w-6 h-6 text-[#636E72]" />
               </button>
@@ -4265,7 +4344,7 @@ export default function App() {
                 <Clock className="w-10 h-10 text-[#00B894]" />
               </div>
 
-              <h2 className="text-2xl font-black text-[#2D3436] mb-8">倒計時</h2>
+              <h2 className={`text-2xl font-black mb-8 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>倒計時</h2>
 
               {showTimeUp && (
                 <motion.div 
@@ -4280,7 +4359,9 @@ export default function App() {
               <div className="flex items-center justify-center gap-4 mb-8">
                 <button 
                   onClick={playBellSound}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#F1F3F5] text-[#636E72] rounded-xl hover:bg-[#E1E4E8] transition-colors text-xs font-bold"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors text-xs font-bold ${
+                    theme === 'dark' ? 'bg-[#2D3436] text-white hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                  }`}
                 >
                   <Volume2 className="w-4 h-4" />
                   測試鈴聲
@@ -4305,7 +4386,9 @@ export default function App() {
                           if (type === 'm') setTimeLeft(prev => prev + 60);
                           if (type === 's') setTimeLeft(prev => prev + 1);
                         }}
-                        className="text-5xl font-black text-[#2D3436] hover:text-[#00B894] transition-colors tabular-nums"
+                        className={`text-5xl font-black hover:text-[#00B894] transition-colors tabular-nums ${
+                          theme === 'dark' ? 'text-white' : 'text-[#2D3436]'
+                        }`}
                       >
                         {value}
                       </button>
@@ -4344,7 +4427,9 @@ export default function App() {
                     setTimeLeft(0);
                     setShowTimeUp(false);
                   }}
-                  className="px-6 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                  className={`px-6 py-4 rounded-2xl font-black transition-colors ${
+                    theme === 'dark' ? 'bg-[#2D3436] text-gray-400 hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                  }`}
                 >
                   重置
                 </button>
@@ -4373,14 +4458,16 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]"
+              className={`w-full max-w-md rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh] ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between">
+              <div className={`p-8 border-b flex items-center justify-between ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center">
                     <Lock className="w-6 h-6 text-[#6C5CE7]" />
                   </div>
-                  <h2 className="text-2xl font-bold">{t.studentPassword}</h2>
+                  <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{t.studentPassword}</h2>
                 </div>
                 <button 
                   onClick={() => {
@@ -4388,7 +4475,7 @@ export default function App() {
                     setPasswordModalStudent(null);
                     setTempStudentPassword('');
                   }}
-                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                  className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#4A5568]' : 'hover:bg-[#F1F3F5]'}`}
                 >
                   <X className="w-6 h-6 text-[#636E72]" />
                 </button>
@@ -4397,16 +4484,16 @@ export default function App() {
               <div className="p-8 overflow-y-auto">
                 {passwordModalStudent ? (
                   <form onSubmit={handleSetStudentPassword} className="space-y-6">
-                    <div className="flex items-center gap-4 p-4 bg-[#F8F9FA] rounded-2xl">
-                      <img src={passwordModalStudent.avatar} className="w-12 h-12 rounded-xl bg-white" alt="" />
+                    <div className={`flex items-center gap-4 p-4 rounded-2xl ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F8F9FA]'}`}>
+                      <img src={passwordModalStudent.avatar} className={`w-12 h-12 rounded-xl ${theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'}`} alt="" />
                       <div>
-                        <p className="text-xs font-black text-[#B2BEC3] uppercase tracking-wider">正在設定</p>
-                        <p className="text-lg font-bold text-[#2D3436]">{passwordModalStudent.name}</p>
+                        <p className={`text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-500' : 'text-[#B2BEC3]'}`}>正在設定</p>
+                        <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{passwordModalStudent.name}</p>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2 px-1">
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
                         {t.setStudentPassword}
                       </label>
                       <input 
@@ -4416,9 +4503,12 @@ export default function App() {
                         value={tempStudentPassword}
                         onChange={(e) => setTempStudentPassword(e.target.value.replace(/\D/g, ''))}
                         placeholder={t.passwordPlaceholder}
-                        className="w-full bg-[#F1F3F5] border-2 border-transparent rounded-2xl px-6 py-4 text-2xl font-bold text-center tracking-[0.5em] outline-none focus:border-[#6C5CE7] transition-all"
+                        className={`w-full border-2 border-transparent rounded-2xl px-6 py-4 text-2xl font-bold text-center tracking-[0.5em] outline-none focus:border-[#6C5CE7] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white shadow-inner' : 'bg-[#F1F3F5]'
+                        }`}
                       />
                     </div>
+
 
                     <div className="flex gap-4 pt-4">
                       <button 
@@ -4493,21 +4583,25 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+              className={`relative rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh] ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className={`p-8 border-b flex items-center justify-between sticky top-0 z-10 ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#F1F3F5]'
+              }`}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center">
                     <BookOpen className="w-6 h-6 text-[#6C5CE7]" />
                   </div>
-                  <h2 className="text-2xl font-black text-[#2D3436]">{t.homeworkTitle}</h2>
+                  <h2 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.homeworkTitle}</h2>
                 </div>
                 <button 
                   onClick={() => {
                     setIsHomeworkModalOpen(false);
                     setIsAddingHomework(false);
                   }}
-                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                  className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#4A5568]' : 'hover:bg-[#F1F3F5]'}`}
                 >
                   <X className="w-6 h-6 text-[#636E72]" />
                 </button>
@@ -4517,7 +4611,9 @@ export default function App() {
                 {isTeacher && !loggedInStudentId && !isAddingHomework && (
                   <button 
                     onClick={() => setIsAddingHomework(true)}
-                    className="w-full py-4 border-2 border-dashed border-[#DFE6E9] rounded-2xl flex items-center justify-center gap-2 text-[#6C5CE7] font-bold hover:bg-[#6C5CE7]/5 hover:border-[#6C5CE7] transition-all mb-6"
+                    className={`w-full py-4 border-2 border-dashed rounded-2xl flex items-center justify-center gap-2 font-bold transition-all mb-6 ${
+                      theme === 'dark' ? 'border-[#4A5568] text-[#6C5CE7] hover:bg-[#6C5CE7]/5 hover:border-[#6C5CE7]' : 'border-[#DFE6E9] text-[#6C5CE7] hover:bg-[#6C5CE7]/5 hover:border-[#6C5CE7]'
+                    }`}
                   >
                     <Plus className="w-5 h-5" />
                     {t.addHomework}
@@ -4527,16 +4623,18 @@ export default function App() {
                 {isAddingHomework ? (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.question}</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.question}</label>
                       <textarea 
                         value={newHomework.question}
                         onChange={(e) => setNewHomework({...newHomework, question: e.target.value})}
-                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all h-24"
+                        className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all h-24 ${
+                          theme === 'dark' ? 'bg-[#2D3436] text-white shadow-inner' : 'bg-[#F1F3F5]'
+                        }`}
                         placeholder={t.questionPlaceholder}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.image} (選填)</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.image} (選填)</label>
                       <input 
                         type="file"
                         ref={homeworkFileInputRef}
@@ -4547,13 +4645,15 @@ export default function App() {
                       <div className="flex gap-3">
                         <button 
                           onClick={() => homeworkFileInputRef.current?.click()}
-                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none border-2 border-dashed border-[#E1E4E8] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 transition-all flex items-center justify-center gap-2 text-[#636E72] hover:text-[#6C5CE7]"
+                          className={`flex-1 rounded-2xl p-4 font-bold outline-none border-2 border-dashed transition-all flex items-center justify-center gap-2 ${
+                            theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-gray-400 hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 hover:text-[#6C5CE7]' : 'bg-[#F1F3F5] border-[#E1E4E8] text-[#636E72] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5 hover:text-[#6C5CE7]'
+                          }`}
                         >
                           <Upload className="w-5 h-5" />
                           {t.uploadImage}
                         </button>
                         {newHomework.imageUrl && (
-                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#6C5CE7] shrink-0">
+                          <div className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#6C5CE7] shrink-0`}>
                             <img src={newHomework.imageUrl} className="w-full h-full object-cover" alt="Preview" />
                             <button 
                               onClick={() => setNewHomework({ ...newHomework, imageUrl: '' })}
@@ -4566,41 +4666,48 @@ export default function App() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.teacherAnswer}</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.teacherAnswer}</label>
                       <input 
-                        type="text"
+                        type="text" 
                         value={newHomework.answer}
                         onChange={(e) => setNewHomework({...newHomework, answer: e.target.value})}
-                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
-                        placeholder={t.homeworkAnswerPlaceholder}
+                        className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all ${
+                          theme === 'dark' ? 'bg-[#2D3436] text-white shadow-inner' : 'bg-[#F1F3F5]'
+                        }`}
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.coins} {t.reward}</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.coins} {t.reward}</label>
                         <input 
                           type="number"
                           value={newHomework.coinsReward}
                           onChange={(e) => setNewHomework({...newHomework, coinsReward: parseInt(e.target.value)})}
-                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.exp} {t.reward}</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.exp} {t.reward}</label>
                         <input 
                           type="number"
                           value={newHomework.expReward}
                           onChange={(e) => setNewHomework({...newHomework, expReward: parseInt(e.target.value)})}
-                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.medals} {t.reward}</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.medals} {t.reward}</label>
                         <input 
                           type="number"
                           value={newHomework.medalsReward}
                           onChange={(e) => setNewHomework({...newHomework, medalsReward: parseInt(e.target.value)})}
-                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all"
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#6C5CE7] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                         />
                       </div>
                     </div>
@@ -4622,8 +4729,8 @@ export default function App() {
                             }}
                             className={`py-2 rounded-xl font-bold text-xs transition-all ${
                               new Date(newHomework.expiresAt!).getDate() === new Date(Date.now() + opt.val * 24 * 60 * 60 * 1000).getDate()
-                                ? 'bg-[#6C5CE7] text-white'
-                                : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                                ? 'bg-[#6C5CE7] text-white shadow-md'
+                                : theme === 'dark' ? 'bg-[#2D3436] text-gray-400 hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
                             }`}
                           >
                             {opt.label}
@@ -4634,7 +4741,9 @@ export default function App() {
                     <div className="flex gap-4 pt-4">
                       <button 
                         onClick={() => setIsAddingHomework(false)}
-                        className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                        className={`flex-1 py-4 rounded-2xl font-black transition-colors ${
+                          theme === 'dark' ? 'bg-[#2D3436] text-gray-400 hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                        }`}
                       >
                         {t.cancel}
                       </button>
@@ -4773,7 +4882,9 @@ export default function App() {
                                         value={studentAnswers[hw.id] || ''}
                                         onChange={(e) => setStudentAnswers({...studentAnswers, [hw.id]: e.target.value})}
                                         placeholder={t.enterAnswer}
-                                        className="flex-1 bg-white border-2 border-[#E1E4E8] rounded-xl px-4 py-2 font-bold outline-none focus:border-[#6C5CE7] transition-all"
+                                        className={`flex-1 border-2 rounded-xl px-4 py-2 font-bold outline-none focus:border-[#6C5CE7] transition-all ${
+                                          theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white' : 'bg-white border-[#E1E4E8]'
+                                        }`}
                                       />
                                       <button 
                                         onClick={async () => {
@@ -4885,21 +4996,25 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+              className={`relative rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh] ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
             >
-              <div className="p-8 border-b border-[#F1F3F5] flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className={`p-8 border-b flex items-center justify-between sticky top-0 z-10 ${
+                theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#F1F3F5]'
+              }`}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[#F368E0]/10 rounded-2xl flex items-center justify-center">
                     <Heart className="w-6 h-6 text-[#F368E0]" />
                   </div>
-                  <h2 className="text-2xl font-black text-[#2D3436]">{t.specialPet}</h2>
+                  <h2 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.specialPet}</h2>
                 </div>
                 <button 
                   onClick={() => {
                     setIsSpecialPetModalOpen(false);
                     setIsAddingSpecialPet(false);
                   }}
-                  className="p-2 hover:bg-[#F1F3F5] rounded-xl transition-colors"
+                  className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#4A5568]' : 'hover:bg-[#F1F3F5]'}`}
                 >
                   <X className="w-6 h-6 text-[#636E72]" />
                 </button>
@@ -4919,17 +5034,19 @@ export default function App() {
                 {isAddingSpecialPet ? (
                   <div className="space-y-6 text-left">
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petName}</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.petName}</label>
                       <input 
                         type="text"
                         value={newSpecialPet.name}
                         onChange={(e) => setNewSpecialPet({...newSpecialPet, name: e.target.value})}
-                        className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                        className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white shadow-inner' : 'bg-[#F1F3F5]'
+                        }`}
                         placeholder={t.petName}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPhoto}</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.petPhoto}</label>
                       <input 
                         type="file"
                         ref={specialPetFileInputRef}
@@ -4940,13 +5057,15 @@ export default function App() {
                       <div className="flex gap-3">
                         <button 
                           onClick={() => specialPetFileInputRef.current?.click()}
-                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none border-2 border-dashed border-[#E1E4E8] hover:border-[#F368E0] hover:bg-[#F368E0]/5 transition-all flex items-center justify-center gap-2 text-[#636E72] hover:text-[#F368E0]"
+                          className={`flex-1 rounded-2xl p-4 font-bold outline-none border-2 border-dashed transition-all flex items-center justify-center gap-2 ${
+                            theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-gray-400 hover:border-[#F368E0] hover:bg-[#F368E0]/5 hover:text-[#F368E0]' : 'bg-[#F1F3F5] border-[#E1E4E8] text-[#636E72] hover:border-[#F368E0] hover:bg-[#F368E0]/5 hover:text-[#F368E0]'
+                          }`}
                         >
                           <Upload className="w-5 h-5" />
                           {t.uploadImage}
                         </button>
                         {newSpecialPet.imageUrl && (
-                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#F368E0] shrink-0">
+                          <div className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#F368E0] shrink-0`}>
                             <img src={newSpecialPet.imageUrl} className="w-full h-full object-cover" alt="Preview" />
                             <button 
                               onClick={() => setNewSpecialPet({ ...newSpecialPet, imageUrl: '' })}
@@ -4960,40 +5079,48 @@ export default function App() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPrice}</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.petPrice}</label>
                         <input 
                           type="number"
                           value={newSpecialPet.price}
                           onChange={(e) => setNewSpecialPet({...newSpecialPet, price: Math.max(0, parseInt(e.target.value) || 0)})}
-                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">{t.petPower}</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.petPower}</label>
                         <input 
                           type="number"
                           value={newSpecialPet.power}
                           onChange={(e) => {
                             setNewSpecialPet({...newSpecialPet, power: Math.max(1, parseInt(e.target.value) || 0)});
                           }}
-                          className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                           placeholder="輸入數據..."
                         />
                       </div>
                     </div>
 
                     <div className="mt-4">
-                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">出現等級 (Stage/Tier)</label>
+                      <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>出現等級 (Stage/Tier)</label>
                       <div className="flex gap-2 mb-2">
                         <input 
                           type="number"
                           value={newSpecialPet.tier}
                           onChange={(e) => setNewSpecialPet({...newSpecialPet, tier: Math.max(1, parseInt(e.target.value) || 1)})}
-                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                          className={`flex-1 rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
                         />
                         <button 
                           onClick={() => setShowLevelSelector(!showLevelSelector)}
-                          className="px-4 bg-[#F1F3F5] rounded-2xl font-black text-[#6C5CE7] text-xs"
+                          className={`px-4 rounded-2xl font-black text-xs transition-colors ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-[#6C5CE7] hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#6C5CE7] hover:bg-[#E1E4E8]'
+                          }`}
                         >
                           {showLevelSelector ? '關閉選擇器' : '快速選擇器'}
                         </button>
@@ -5003,7 +5130,9 @@ export default function App() {
                         <motion.div 
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="grid grid-cols-5 gap-2 p-3 bg-[#F1F3F5] rounded-2xl border border-[#E1E4E8]"
+                          className={`grid grid-cols-5 gap-2 p-3 rounded-2xl border ${
+                            theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'
+                          }`}
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
                             <button
@@ -5011,7 +5140,11 @@ export default function App() {
                               onClick={() => {
                                 setNewSpecialPet({ ...newSpecialPet, tier: level });
                               }}
-                              className={`py-3 rounded-xl font-black text-sm transition-all ${newSpecialPet.tier === level ? 'bg-[#F368E0] text-white shadow-md scale-105' : 'bg-white text-[#636E72] hover:bg-[#E1E4E8]'}`}
+                              className={`py-3 rounded-xl font-black text-sm transition-all ${
+                                newSpecialPet.tier === level 
+                                  ? 'bg-[#F368E0] text-white shadow-md scale-105' 
+                                  : theme === 'dark' ? 'bg-[#353B48] text-gray-400 hover:bg-[#4A5568]' : 'bg-white text-[#636E72] hover:bg-[#E1E4E8]'
+                              }`}
                             >
                               {level}
                             </button>
@@ -5025,7 +5158,9 @@ export default function App() {
                           setIsAddingSpecialPet(false);
                           setShowLevelSelector(false);
                         }}
-                        className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
+                        className={`flex-1 py-4 rounded-2xl font-black transition-colors ${
+                          theme === 'dark' ? 'bg-[#2D3436] text-gray-400 hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                        }`}
                       >
                         {t.cancel}
                       </button>
@@ -5041,7 +5176,7 @@ export default function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {specialPets.length === 0 && (
                       <div className="col-span-full text-center py-12">
-                        <p className="text-[#B2BEC3] font-bold">目前沒有特別寵物</p>
+                        <p className={`${theme === 'dark' ? 'text-gray-500' : 'text-[#B2BEC3]'} font-bold`}>目前沒有特別寵物</p>
                       </div>
                     )}
                     {specialPets.map((pet) => {
@@ -5049,7 +5184,9 @@ export default function App() {
                       const isOwned = student?.ownedSpecialPets?.includes(pet.id);
                       
                       return (
-                        <div key={pet.id} className="bg-[#F8F9FA] rounded-[2.5rem] p-6 border-2 border-[#F1F3F5] flex flex-col items-center gap-4 relative">
+                        <div key={pet.id} className={`rounded-[2.5rem] p-6 border-2 flex flex-col items-center gap-4 relative ${
+                          theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'
+                        }`}>
                           {isTeacher && !loggedInStudentId && (
                             <button 
                               onClick={async () => {
@@ -5063,12 +5200,12 @@ export default function App() {
                             </button>
                           )}
                           
-                          <div className="w-32 h-32 rounded-3xl overflow-hidden bg-white shadow-md border-2 border-white flex items-center justify-center">
+                          <div className={`w-32 h-32 rounded-3xl overflow-hidden shadow-md border-2 flex items-center justify-center ${theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-white'}`}>
                             <img src={pet.imageUrl} className="w-full h-full object-cover" alt={pet.name} referrerPolicy="no-referrer" />
                           </div>
                           
                           <div className="text-center">
-                            <h3 className="text-xl font-black text-[#2D3436]">{pet.name}</h3>
+                            <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{pet.name}</h3>
                             <div className="flex items-center justify-center gap-2 mt-1">
                               <span className="px-2 py-0.5 bg-[#6C5CE7]/10 text-[#6C5CE7] rounded-lg text-[10px] font-black">
                                 +{pet.power} Power
