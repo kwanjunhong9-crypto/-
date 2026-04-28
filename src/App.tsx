@@ -28,6 +28,10 @@ import {
   CheckCircle2,
   XCircle,
   ChevronRight,
+  ChevronDown,
+  Flame,
+  Sun,
+  Moon,
   Medal,
   Package,
   Gift,
@@ -856,6 +860,19 @@ export default function App() {
   const [isPosting, setIsPosting] = useState(false);
   const [hasExited, setHasExited] = useState(false);
   const [language, setLanguage] = useState<Language>('zh-Hant');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('app-theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [coinsModalStudent, setCoinsModalStudent] = useState<Student | null>(null);
   const [powerModalMode, setPowerModalMode] = useState<'pet' | 'avatar'>('pet');
@@ -891,11 +908,13 @@ export default function App() {
   const [specialPets, setSpecialPets] = useState<SpecialPet[]>([]);
   const [isSpecialPetModalOpen, setIsSpecialPetModalOpen] = useState(false);
   const [isAddingSpecialPet, setIsAddingSpecialPet] = useState(false);
+  const [showLevelSelector, setShowLevelSelector] = useState(false);
   const [newSpecialPet, setNewSpecialPet] = useState<Partial<SpecialPet>>({
     name: '',
     price: 0,
     imageUrl: '',
-    power: 0
+    power: 1,
+    tier: 1
   });
 
   const [isChestModalOpen, setIsChestModalOpen] = useState(false);
@@ -905,8 +924,12 @@ export default function App() {
   const [bossDifficulty, setBossDifficulty] = useState<'simple' | 'medium' | 'hard' | 'demon' | null>(null);
   const [bossHp, setBossHp] = useState(0);
   const [maxBossHp, setMaxBossHp] = useState(0);
+  const [customBossHp, setCustomBossHp] = useState(0);
   const [damageDealt, setDamageDealt] = useState<{[studentId: string]: number}>({});
   const [isBossDefeated, setIsBossDefeated] = useState(false);
+  const [criticalUsed, setCriticalUsed] = useState<Record<string, boolean>>({});
+  const [selectedCombatStudents, setSelectedCombatStudents] = useState<Set<string>>(new Set());
+  const [bossCombatStarted, setBossCombatStarted] = useState(false);
 
   // Timer & Toolbox State
   const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
@@ -996,9 +1019,15 @@ export default function App() {
       return () => unsubscribe();
     } else {
       const savedClass = localStorage.getItem('dojo_class_name');
+      const savedStudents = localStorage.getItem('dojo_students');
       if (savedClass) {
         setClassName(savedClass);
         setIsGuest(true);
+        setIsTeacher(true);
+        setActiveClassId('guest-class');
+        if (savedStudents) {
+          setStudents(JSON.parse(savedStudents));
+        }
         setView('app');
       } else {
         setView('landing');
@@ -1008,7 +1037,7 @@ export default function App() {
 
   // Firestore Sync
   useEffect(() => {
-    if (activeClassId) {
+    if (activeClassId && !isGuest) {
       const classRef = doc(db, 'classes', activeClassId);
       const unsubscribeClass = onSnapshot(classRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -1037,11 +1066,11 @@ export default function App() {
         unsubscribePosts();
       };
     }
-  }, [activeClassId, user, loggedInStudentId]);
+  }, [activeClassId, user, loggedInStudentId, isGuest]);
 
   // Homework Sync
   useEffect(() => {
-    if (activeClassId) {
+    if (activeClassId && !isGuest) {
       const hwQuery = query(collection(db, 'homeworks'), where('classId', '==', activeClassId));
       const unsubscribeHw = onSnapshot(hwQuery, (querySnapshot) => {
         const fetchedHw: Homework[] = [];
@@ -1052,11 +1081,11 @@ export default function App() {
       });
       return () => unsubscribeHw();
     }
-  }, [activeClassId]);
+  }, [activeClassId, isGuest]);
 
   // Sync passwords to global collection for universal login
   useEffect(() => {
-    if (isTeacher && activeClassId && students.length > 0 && !loggedInStudentId) {
+    if (isTeacher && activeClassId && !isGuest && students.length > 0 && !loggedInStudentId) {
       const syncPasswords = async () => {
         try {
           for (const student of students) {
@@ -1077,11 +1106,11 @@ export default function App() {
       };
       syncPasswords();
     }
-  }, [isTeacher, activeClassId, students, loggedInStudentId]);
+  }, [isTeacher, activeClassId, students, loggedInStudentId, isGuest]);
 
   // Special Pet Sync
   useEffect(() => {
-    if (activeClassId) {
+    if (activeClassId && !isGuest) {
       const petsQuery = query(collection(db, 'specialPets'), where('classId', '==', activeClassId));
       const unsubscribePets = onSnapshot(petsQuery, (querySnapshot) => {
         const fetchedPets: SpecialPet[] = [];
@@ -1092,7 +1121,7 @@ export default function App() {
       });
       return () => unsubscribePets();
     }
-  }, [activeClassId]);
+  }, [activeClassId, isGuest]);
 
   // LocalStorage Sync for Guests
   useEffect(() => {
@@ -1110,6 +1139,16 @@ export default function App() {
       if (savedPosts) {
         setPosts(JSON.parse(savedPosts));
       }
+
+      const savedHw = localStorage.getItem('dojo_homeworks');
+      if (savedHw) {
+        setHomeworks(JSON.parse(savedHw));
+      }
+
+      const savedPets = localStorage.getItem('dojo_special_pets');
+      if (savedPets) {
+        setSpecialPets(JSON.parse(savedPets));
+      }
     }
   }, [isGuest, view]);
 
@@ -1125,6 +1164,18 @@ export default function App() {
       localStorage.setItem('dojo_posts', JSON.stringify(posts));
     }
   }, [posts, isGuest, view]);
+
+  useEffect(() => {
+    if (isGuest && view === 'app') {
+      localStorage.setItem('dojo_homeworks', JSON.stringify(homeworks));
+    }
+  }, [homeworks, isGuest, view]);
+
+  useEffect(() => {
+    if (isGuest && view === 'app') {
+      localStorage.setItem('dojo_special_pets', JSON.stringify(specialPets));
+    }
+  }, [specialPets, isGuest, view]);
 
   useEffect(() => {
     if (isGuest && className) {
@@ -1248,12 +1299,13 @@ export default function App() {
       if (error.code === 'auth/popup-blocked') {
         setLoginError(t.popupBlocked);
       } else if (error.code === 'auth/cancelled-popup-request') {
-        // This happens if multiple popups are requested, we can ignore it or show a subtle message
         console.warn('Multiple login requests detected, previous one cancelled.');
-      } else if (error.code === 'auth/popup-closed-by-user') {
+      } else if (error.code === 'auth/popup-closed-by-user' || error.message?.includes('popup-closed-by-user')) {
         setLoginError(t.popupClosed);
+      } else if (error.code === 'auth/network-request-failed') {
+        setLoginError('網絡請求失敗，請檢查您的連接。');
       } else {
-        setLoginError(t.loginFailed);
+        setLoginError(`${t.loginFailed}: ${error.code || error.message}`);
       }
     } finally {
       setIsLoggingIn(false);
@@ -1370,13 +1422,16 @@ export default function App() {
         console.error('Failed to create class in Firestore', error);
       }
     } else {
+      setIsTeacher(true);
       setIsGuest(true);
+      setActiveClassId('guest-class');
       setView('app');
+      localStorage.setItem('dojo_class_name', className);
     }
   };
 
   const syncStudentsToFirestore = async (newStudents: Student[]) => {
-    if (activeClassId && (isTeacher || loggedInStudentId)) {
+    if (activeClassId && !isGuest && (isTeacher || loggedInStudentId)) {
       try {
         await updateDoc(doc(db, 'classes', activeClassId), {
           students: newStudents
@@ -1384,6 +1439,10 @@ export default function App() {
       } catch (error) {
         console.error('Failed to sync students', error);
       }
+    }
+    
+    if (isGuest) {
+      localStorage.setItem('dojo_students', JSON.stringify(newStudents));
     }
   };
 
@@ -1412,43 +1471,103 @@ export default function App() {
       return;
     }
     
-    if (newSpecialPet.price === undefined || newSpecialPet.power === undefined) {
-      alert('請填寫價格和力量數量');
+    if (newSpecialPet.price === undefined || newSpecialPet.power === undefined || newSpecialPet.tier === undefined) {
+      alert('請填寫價格、戰鬥力和等級');
       return;
     }
+
+    const petData = {
+      name: newSpecialPet.name,
+      price: Number(newSpecialPet.price),
+      imageUrl: newSpecialPet.imageUrl,
+      power: Number(newSpecialPet.power),
+      tier: Number(newSpecialPet.tier),
+      createdAt: new Date().toISOString()
+    };
     
-    if (activeClassId) {
+    if (!isGuest && activeClassId) {
       try {
         const petRef = doc(collection(db, 'specialPets'));
         await setDoc(petRef, {
-          name: newSpecialPet.name,
-          price: Number(newSpecialPet.price),
-          imageUrl: newSpecialPet.imageUrl,
-          power: Number(newSpecialPet.power),
+          ...petData,
           id: petRef.id,
           classId: activeClassId,
           createdAt: serverTimestamp()
         });
         setIsAddingSpecialPet(false);
-        setNewSpecialPet({ name: '', price: 0, imageUrl: '', power: 0 });
+        setShowLevelSelector(false);
+        setNewSpecialPet({ name: '', price: 0, imageUrl: '', power: 1, tier: 1 });
         playSound('success');
       } catch (e) {
         console.error("Error creating special pet:", e);
         alert('保存失敗，請檢查網絡連接');
       }
+    } else if (isGuest) {
+      const guestPet: SpecialPet = {
+        ...petData,
+        id: Date.now().toString(),
+        classId: 'guest-class'
+      } as any;
+      setSpecialPets(prev => [guestPet, ...prev]);
+      setIsAddingSpecialPet(false);
+      setShowLevelSelector(false);
+      setNewSpecialPet({ name: '', price: 0, imageUrl: '', power: 1, tier: 1 });
+      playSound('success');
     } else {
       alert('無法找到班級 ID，請重新登入');
     }
   };
 
-  const handleBuySpecialPet = async (pet: SpecialPet) => {
-    if (!loggedInStudentId || !activeClassId) return;
+  const handleSelectSpecialPet = async (studentId: string, petId: string) => {
+    try {
+      if (!activeClassId) return;
+      const classRef = doc(db, 'classes', activeClassId);
+      
+      const updatedStudents = students.map(s => {
+        if (s.id === studentId) {
+          // If petId is empty string, explicitly unequip
+          if (petId === '') {
+            return { ...s, equippedSpecialPet: null };
+          }
+
+          // Toggle if already equipped
+          if (s.equippedSpecialPet === petId) {
+            return { ...s, equippedSpecialPet: null };
+          }
+
+          // Equip and unequip regular pet
+          return { ...s, equippedSpecialPet: petId, equippedPet: null };
+        }
+        return s;
+      });
+
+      if (!isGuest) {
+        await updateDoc(classRef, { students: updatedStudents });
+      } else {
+        setStudents(updatedStudents);
+      }
+      playSound('success');
+    } catch (e) {
+      console.error("Error toggling special pet:", e);
+    }
+  };
+
+  const handleBuySpecialPet = async (pet: SpecialPet, targetStudentId?: string) => {
+    const studentId = targetStudentId || loggedInStudentId;
+    if (!studentId || !activeClassId) return;
     
-    const student = students.find(s => s.id === loggedInStudentId);
+    const student = students.find(s => s.id === studentId);
     if (!student) return;
     
     if (student.coins < pet.price) {
       alert(t.notEnoughCoins);
+      return;
+    }
+
+    const currentStage = Math.floor((student.points || 0) / 30);
+    const petTier = pet.tier || pet.power;
+    if (currentStage < petTier) {
+      alert(`等級不足！需要達到 Stage ${petTier} 才能購買此寵物。`);
       return;
     }
     
@@ -1460,7 +1579,7 @@ export default function App() {
     try {
       const classRef = doc(db, 'classes', activeClassId);
       const updatedStudents = students.map(s => {
-        if (s.id === loggedInStudentId) {
+        if (s.id === studentId) {
           const ownedSpecialPets = [...(s.ownedSpecialPets || []), pet.id];
           return {
             ...s,
@@ -1473,8 +1592,12 @@ export default function App() {
         return s;
       });
       
-      await updateDoc(classRef, { students: updatedStudents });
-      playSound('power');
+      if (!isGuest) {
+        await updateDoc(classRef, { students: updatedStudents });
+      } else {
+        setStudents(updatedStudents);
+      }
+      playSound('success');
     } catch (e) {
       console.error("Error buying special pet:", e);
     }
@@ -1596,16 +1719,32 @@ export default function App() {
 
   if (view === 'landing') {
     return (
-      <div className="min-h-screen bg-[#F5F7FA] flex flex-col p-4 relative overflow-hidden">
+      <div className={`min-h-screen flex flex-col p-4 relative overflow-hidden transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-[#2D3436] text-gray-100' : 'bg-[#F5F7FA] text-[#2D3436]'
+      }`}>
+        {/* Theme Toggle Left Top */}
+        <div className="absolute top-8 left-8 z-20">
+          <button 
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            className={`p-3 rounded-2xl transition-all hover:scale-110 active:scale-95 shadow-sm ${
+              theme === 'dark' ? 'bg-[#353B48] text-yellow-400 border border-[#4A5568]' : 'bg-white text-[#636E72] border border-[#E1E4E8]'
+            }`}
+          >
+            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
+        </div>
+
         {/* Top Right Buttons */}
         <div className="absolute top-8 right-8 z-20 flex items-center gap-3">
-          <div className="hidden sm:block">
+          <div className="hidden sm:block text-[#2D3436]">
             <LanguageSwitcher />
           </div>
           <button 
             onClick={user ? handleExit : handleGoogleLogin}
             disabled={isLoggingIn}
-            className={`flex items-center gap-2 bg-white px-6 py-3 rounded-2xl font-bold text-[#2D3436] shadow-sm hover:shadow-md transition-all border border-[#E1E4E8] active:scale-95 ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold shadow-sm hover:shadow-md transition-all border active:scale-95 ${
+              theme === 'dark' ? 'bg-[#353B48] text-white border-[#4A5568]' : 'bg-white text-[#2D3436] border-[#E1E4E8]'
+            } ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isLoggingIn ? (
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[#00B894]"></div>
@@ -1698,7 +1837,9 @@ export default function App() {
                     setHasExited(false);
                     setView('app');
                   }}
-                  className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative border-2 border-[#00B894]/20"
+                  className={`rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative border-2 ${
+                    theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#00B894]/20'
+                  }`}
                 >
                   <div className="absolute top-6 right-6 flex gap-2">
                     {isTeacher && (
@@ -1708,7 +1849,9 @@ export default function App() {
                           setEditingClassId(cls.id);
                           setEditingClassName(cls.name);
                         }}
-                        className="p-2 bg-[#F1F3F5] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] text-[#636E72]"
+                        className={`p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-[#636E72] ${
+                          theme === 'dark' ? 'bg-[#4A5568] hover:bg-[#57606f]' : 'bg-[#F1F3F5] hover:bg-[#E1E4E8]'
+                        }`}
                         title={t.rename}
                       >
                         <Pencil className="w-4 h-4" />
@@ -1718,7 +1861,9 @@ export default function App() {
                   </div>
                   
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-20 h-20 bg-[#00B894]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${
+                      theme === 'dark' ? 'bg-[#00B894]/30' : 'bg-[#00B894]/10'
+                    }`}>
                       <Globe className="w-10 h-10 text-[#00B894]" />
                     </div>
                     {editingClassId === cls.id ? (
@@ -1732,7 +1877,9 @@ export default function App() {
                             if (e.key === 'Enter') handleRenameClass(e, cls.id);
                             if (e.key === 'Escape') setEditingClassId(null);
                           }}
-                          className="w-full bg-[#F1F3F5] border-2 border-[#00B894] rounded-xl px-3 py-2 text-sm font-bold text-center outline-none"
+                          className={`w-full border-2 border-[#00B894] rounded-xl px-3 py-2 text-sm font-bold text-center outline-none ${
+                            theme === 'dark' ? 'bg-[#4A5568] text-white' : 'bg-[#F1F3F5] text-[#2D3436]'
+                          }`}
                         />
                           <div className="flex gap-2 justify-center">
                             <button
@@ -1743,18 +1890,18 @@ export default function App() {
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setEditingClassId(null); }}
-                              className="bg-[#DFE6E9] text-[#636E72] px-3 py-1 rounded-lg text-xs font-black"
-                            >
-                              {t.cancel}
-                            </button>
-                          </div>
-                      </div>
-                    ) : (
-                      <h3 className="text-lg font-black text-[#2D3436] mb-2">{cls.name}</h3>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                               className={`bg-[#DFE6E9] text-[#636E72] px-3 py-1 rounded-lg text-xs font-black ${theme === 'dark' ? 'bg-[#4A5568]' : ''}`}
+                             >
+                               {t.cancel}
+                             </button>
+                           </div>
+                       </div>
+                     ) : (
+                       <h3 className={`text-lg font-black mb-2 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2D3436]'}`}>{cls.name}</h3>
+                     )}
+                   </div>
+                 </motion.div>
+                ))}
 
               {/* Add New Class Button - Always visible for teachers */}
               <motion.div 
@@ -1764,7 +1911,9 @@ export default function App() {
                   setHasExited(false);
                   setView('createClass');
                 }}
-                className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group border-2 border-dashed border-[#DFE6E9] hover:border-[#00B894] flex flex-col items-center justify-center min-h-[240px]"
+                className={`rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer group border-2 border-dashed flex flex-col items-center justify-center min-h-[240px] ${
+                  theme === 'dark' ? 'bg-[#353B48] border-[#4A5568] hover:border-[#00B894]' : 'bg-white border-[#DFE6E9] hover:border-[#00B894]'
+                }`}
               >
                 <div className="w-16 h-16 bg-[#6C5CE7] rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-[#6C5CE7]/20">
                   <Plus className="w-8 h-8 text-white" />
@@ -1823,28 +1972,34 @@ export default function App() {
 
   if (view === 'createClass') {
     return (
-      <div className="min-h-screen bg-[#F5F7FA] flex flex-col items-center justify-center p-4">
+      <div className={`min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-[#2D3436] text-gray-100' : 'bg-[#F5F7FA] text-[#2D3436]'
+      }`}>
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white rounded-[40px] p-10 shadow-2xl shadow-[#00B894]/10"
+          className={`max-w-md w-full rounded-[40px] p-10 shadow-2xl ${
+            theme === 'dark' ? 'bg-[#353B48] shadow-black/20' : 'bg-white shadow-[#00B894]/10'
+          }`}
         >
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-[#00B894]/10 rounded-2xl flex items-center justify-center">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-[#00B894]/30' : 'bg-[#00B894]/10'}`}>
               <Plus className="text-[#00B894] w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-[#2D3436]">{t.createYourClass}</h2>
+            <h2 className={`text-2xl font-black ${theme === 'dark' ? 'text-gray-100' : 'text-[#2D3436]'}`}>{t.createYourClass}</h2>
           </div>
           
           <div className="space-y-6">
             <div>
-              <label className="text-[10px] font-black text-[#636E72] uppercase tracking-widest mb-2 block px-1">{t.classNameLabel}</label>
+              <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.classNameLabel}</label>
               <input 
                 type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
                 placeholder={t.classNamePlaceholder}
-                className="w-full bg-[#F1F3F5] border-2 border-transparent rounded-2xl px-6 py-4 text-xl font-bold outline-none focus:border-[#00B894] transition-all"
+                className={`w-full border-2 border-transparent rounded-2xl px-6 py-4 text-xl font-bold outline-none focus:border-[#00B894] transition-all ${
+                  theme === 'dark' ? 'bg-[#4A5568] text-white' : 'bg-[#F1F3F5] text-[#2D3436]'
+                }`}
               />
             </div>
             
@@ -1858,7 +2013,7 @@ export default function App() {
             
             <button 
               onClick={() => setView('landing')}
-              className="w-full text-[#636E72] font-bold text-sm hover:text-[#2D3436] transition-colors"
+              className={`w-full font-bold text-sm transition-colors ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-[#636E72] hover:text-[#2D3436]'}`}
             >
               {t.backStep}
             </button>
@@ -1994,36 +2149,79 @@ export default function App() {
     setBossDifficulty(difficulty);
     setBossHp(hpMap[difficulty]);
     setMaxBossHp(hpMap[difficulty]);
+    setCustomBossHp(hpMap[difficulty]);
     setDamageDealt({});
+    setCriticalUsed({});
     setIsBossDefeated(false);
+    setBossCombatStarted(false);
+    setSelectedCombatStudents(new Set(students.map(s => s.id)));
     playSound('power');
   };
 
-  const handleAttackBoss = (student: Student) => {
-    if (isBossDefeated || bossHp <= 0) return;
+  const confirmBossSetup = () => {
+    setBossHp(customBossHp);
+    setMaxBossHp(customBossHp);
+    setBossCombatStarted(true);
+    playSound('power');
+  };
 
-    const power = getPetPower(student);
+  const toggleStudentCombatSelection = (studentId: string) => {
+    setSelectedCombatStudents(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
+  };
+
+  const handleAttackBoss = (student: Student, isCritical = false) => {
+    if (isBossDefeated || bossHp <= 0) return;
+    if (!selectedCombatStudents.has(student.id)) return;
+    if (isCritical && criticalUsed[student.id]) return;
+
+    let power = getPetPower(student);
     if (power <= 0) {
       playSound('error');
       return;
     }
 
+    if (isCritical) {
+      power = Math.floor(power * 1.5);
+      setCriticalUsed(prev => ({ ...prev, [student.id]: true }));
+      playSound('success');
+      
+      // 添加视觉特效：屏幕闪烁或震动效果（这里通过简单的控制台日志模拟，前端已添加动画）
+      console.log(`CRITICAL HIT by ${student.name}: ${power} damage!`);
+    }
+
     const newHp = Math.max(0, bossHp - power);
     setBossHp(newHp);
     
-    const currentDamage = (damageDealt[student.id] || 0) + power;
-    const updatedDamageDealt = {
-      ...damageDealt,
-      [student.id]: currentDamage
-    };
-    
-    setDamageDealt(updatedDamageDealt);
+    // 使用函数式更新确保连续点击时数据准确
+    setDamageDealt(prev => ({
+      ...prev,
+      [student.id]: (prev[student.id] || 0) + power
+    }));
+
+    // 页面浮动数字反馈
+    const indicator = document.createElement('div');
+    indicator.className = `fixed z-[9999] pointer-events-none font-black animate-bounce flex items-center justify-center ${isCritical ? 'text-4xl text-[#F368E0] drop-shadow-lg' : 'text-2xl text-[#6C5CE7]'}`;
+    indicator.style.left = `${Math.random() * 40 + 30}%`;
+    indicator.style.top = `${Math.random() * 20 + 30}%`;
+    indicator.innerHTML = `-${power}${isCritical ? '<span class="ml-2 text-sm bg-white px-2 py-1 rounded-lg border-2 border-[#F368E0]">暴擊!</span>' : ''}`;
+    document.body.appendChild(indicator);
+    setTimeout(() => { if (indicator.parentNode) document.body.removeChild(indicator); }, 1000);
 
     playSound('success');
 
     if (newHp === 0) {
       setIsBossDefeated(true);
-      distributeBossRewards(updatedDamageDealt);
+      const currentDamageForReward = (damageDealt[student.id] || 0) + power;
+      const finalDamageSummary = { ...damageDealt, [student.id]: currentDamageForReward };
+      distributeBossRewards(finalDamageSummary);
     }
   };
 
@@ -2247,11 +2445,23 @@ export default function App() {
   const averagePoints = students.length ? (totalPoints / students.length).toFixed(1) : 0;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] font-sans text-[#2D3436] pb-20 sm:pb-8">
+    <div className={`min-h-screen font-sans pb-20 sm:pb-8 transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-[#2D3436] text-gray-100' : 'bg-[#F5F7FA] text-[#2D3436]'
+    }`}>
       {/* Header */}
-      <header className="bg-white border-b border-[#E1E4E8] sticky top-0 z-10">
+      <header className={`border-b transition-colors sticky top-0 z-10 ${
+        theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+      }`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className={`p-2 rounded-xl transition-all hover:scale-110 active:scale-95 shadow-sm ${
+                theme === 'dark' ? 'bg-[#4A5568] text-yellow-400' : 'bg-[#F1F3F5] text-[#636E72]'
+              }`}
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-[#00B894] rounded-xl flex items-center justify-center shadow-lg shadow-[#00B894]/20">
                 <Users className="text-white w-6 h-6" />
@@ -2268,7 +2478,9 @@ export default function App() {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
                 isToolboxOpen 
                   ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
-                  : 'bg-white text-[#2D3436] border border-[#E1E4E8] hover:bg-[#F8F9FA]'
+                  : theme === 'dark' 
+                    ? 'bg-[#333333] text-gray-200 border border-[#444444] hover:bg-[#444444]'
+                    : 'bg-white text-[#2D3436] border border-[#E1E4E8] hover:bg-[#F8F9FA]'
               }`}
             >
               <LayoutGrid className="w-5 h-5" />
@@ -2286,12 +2498,16 @@ export default function App() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto w-64 bg-white rounded-2xl shadow-xl border border-[#E1E4E8] py-2 z-50 overflow-hidden"
+                      className={`absolute top-full mt-2 right-0 sm:left-0 sm:right-auto w-64 rounded-2xl shadow-xl border py-2 z-50 overflow-hidden ${
+                        theme === 'dark' ? 'bg-[#1E1E1E] border-[#333333]' : 'bg-white border-[#E1E4E8]'
+                      }`}
                     >
                       {/* Login/Profile Section */}
                       <div className="px-2 mb-2">
                         {!isTeacher && !loggedInStudentId && (
-                          <div className="p-3 bg-[#F8F9FA] rounded-xl border border-[#E1E4E8]">
+                          <div className={`p-3 rounded-xl border ${
+                            theme === 'dark' ? 'bg-[#2D2D2D] border-[#444444]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                          }`}>
                             <div className="flex gap-2">
                               <div className="relative flex-1">
                                 <input 
@@ -2303,7 +2519,9 @@ export default function App() {
                                     setStudentLoginPassword(val);
                                   }}
                                   placeholder={t.passwordPlaceholder}
-                                  className="w-full bg-white border border-[#E1E4E8] rounded-lg px-2 py-1.5 text-sm font-bold text-center tracking-widest outline-none focus:border-[#6C5CE7]"
+                                  className={`w-full border rounded-lg px-2 py-1.5 text-sm font-bold text-center tracking-widest outline-none transition-colors ${
+                                    theme === 'dark' ? 'bg-[#1E1E1E] border-[#444444] focus:border-[#6C5CE7]' : 'bg-white border-[#E1E4E8] focus:border-[#6C5CE7]'
+                                  }`}
                                 />
                               </div>
                               <button
@@ -2318,14 +2536,16 @@ export default function App() {
                         )}
 
                         {loggedInStudentId && (
-                          <div className="p-3 bg-[#00B894]/5 rounded-xl border border-[#00B894]/10 flex items-center justify-between">
+                          <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                            theme === 'dark' ? 'bg-[#00B894]/10 border-[#00B894]/20' : 'bg-[#00B894]/5 border-[#00B894]/10'
+                          }`}>
                             <div className="flex items-center gap-2">
                               <img 
                                 src={students.find(s => s.id === loggedInStudentId)?.avatar} 
-                                className="w-8 h-8 rounded-lg bg-white shadow-sm" 
+                                className={`w-8 h-8 rounded-lg shadow-sm ${theme === 'dark' ? 'bg-[#1E1E1E]' : 'bg-white'}`} 
                                 alt="" 
                               />
-                              <span className="text-sm font-bold text-[#2D3436]">
+                              <span className={`text-sm font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>
                                 {students.find(s => s.id === loggedInStudentId)?.name}
                               </span>
                             </div>
@@ -2339,12 +2559,12 @@ export default function App() {
                         )}
                       </div>
 
-                      <div className="h-px bg-[#E1E4E8] mx-2 mb-2" />
+                      <div className={`h-px mx-2 mb-2 ${theme === 'dark' ? 'bg-[#444444]' : 'bg-[#E1E4E8]'}`} />
 
                       <button 
                         onClick={() => { setActiveTab('classroom'); setIsToolboxOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                         }`}
                       >
                         <Users className="w-4 h-4" />
@@ -2356,7 +2576,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('story'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <BookOpen className="w-4 h-4" />
@@ -2365,7 +2585,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('reports'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <Award className="w-4 h-4" />
@@ -2374,7 +2594,7 @@ export default function App() {
                           <button 
                             onClick={() => { setActiveTab('leaderboard'); setIsToolboxOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                             }`}
                           >
                             <Trophy className="w-4 h-4" />
@@ -2385,7 +2605,9 @@ export default function App() {
 
                       <button 
                         onClick={() => { setIsSpecialPetModalOpen(true); setIsToolboxOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA] transition-colors"
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
                       >
                         <Heart className="w-4 h-4 text-[#F368E0]" />
                         {t.specialPet}
@@ -2395,7 +2617,7 @@ export default function App() {
                         <button 
                           onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
                           }`}
                         >
                           <Zap className="w-4 h-4" />
@@ -2403,7 +2625,7 @@ export default function App() {
                         </button>
                       )}
 
-                      <div className="h-px bg-[#E1E4E8] mx-2 my-2" />
+                      <div className={`h-px mx-2 my-2 ${theme === 'dark' ? 'bg-[#444444]' : 'bg-[#E1E4E8]'}`} />
 
                       {(!loggedInStudentId || isTeacher) && (
                         <button 
@@ -2411,7 +2633,9 @@ export default function App() {
                             setIsTimerModalOpen(true);
                             setIsToolboxOpen(false);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[#636E72] hover:bg-[#F8F9FA]"
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                             theme === 'dark' ? 'text-gray-400 hover:bg-[#2D2D2D]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                          }`}
                         >
                           <Clock className="w-4 h-4 text-[#00B894]" />
                           {t.countdown}
@@ -2436,14 +2660,16 @@ export default function App() {
 
           <div className="flex items-center gap-4">
             {loggedInStudentId && (
-              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-[#E1E4E8] shadow-sm">
+              <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border shadow-sm ${
+                theme === 'dark' ? 'bg-[#1E1E1E] border-[#333333]' : 'bg-white border-[#E1E4E8]'
+              }`}>
                 <div className="flex items-center gap-1.5">
                   <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
                   <span className="font-black text-[#F39C12] text-sm">
                     {students.find(s => s.id === loggedInStudentId)?.coins || 0}
                   </span>
                 </div>
-                <div className="w-px h-4 bg-[#E1E4E8]" />
+                <div className={`w-px h-4 ${theme === 'dark' ? 'bg-[#333333]' : 'bg-[#E1E4E8]'}`} />
                 <button 
                   onClick={() => setIsChestModalOpen(true)}
                   className="flex items-center gap-1.5 hover:scale-105 transition-transform"
@@ -2460,12 +2686,12 @@ export default function App() {
             <div className="hidden md:block text-right">
               {loggedInStudentId ? (
                 <>
-                  <p className="text-sm font-bold">{students.find(s => s.id === loggedInStudentId)?.name || t.students}</p>
+                  <p className={`text-sm font-bold ${theme === 'dark' ? 'text-gray-200' : ''}`}>{students.find(s => s.id === loggedInStudentId)?.name || t.students}</p>
                   <p className="text-xs text-[#636E72]">{t.studentStatus}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-bold">{user ? user.displayName : t.teacherName}</p>
+                  <p className={`text-sm font-bold ${theme === 'dark' ? 'text-gray-200' : ''}`}>{user ? user.displayName : t.teacherName}</p>
                   <p className="text-xs text-[#636E72]">{user ? t.verifiedTeacher : t.guestTeacher}</p>
                 </>
               )}
@@ -2473,7 +2699,9 @@ export default function App() {
             {(!loggedInStudentId || isTeacher) && (
               <button 
                 onClick={handleExit}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DFE6E9] hover:bg-[#D63031]/10 group transition-colors"
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors group ${
+                  theme === 'dark' ? 'bg-[#333333] hover:bg-[#D63031]/20' : 'bg-[#DFE6E9] hover:bg-[#D63031]/10'
+                }`}
                 title={t.exitTooltip}
               >
                 <LogOut className="w-5 h-5 text-[#636E72] group-hover:text-[#D63031]" />
@@ -2493,31 +2721,33 @@ export default function App() {
           >
             {/* Class Summary Bar (Teacher only) */}
             {isTeacher && !loggedInStudentId && students.length > 0 && (
-              <div className="col-span-full bg-white/80 backdrop-blur-md rounded-[2rem] p-4 border border-[#E1E4E8] flex flex-wrap items-center justify-center gap-6 mb-2">
+              <div className={`col-span-full backdrop-blur-md rounded-[2rem] p-4 border flex flex-wrap items-center justify-center gap-6 mb-2 ${
+                theme === 'dark' ? 'bg-[#1E1E1E]/80 border-[#404040]' : 'bg-white/80 border-[#E1E4E8]'
+              }`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#F1C40F]/10 rounded-lg flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-[#F1C40F]/20' : 'bg-[#F1C40F]/10'}`}>
                     <Coins className="w-4 h-4 text-[#F39C12] fill-current" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalClassCoins}</p>
+                    <p className={`text-[10px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.totalClassCoins}</p>
                     <p className="text-sm font-black text-[#F39C12]">{students.reduce((acc, s) => acc + (s.coins || 0), 0)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#00B894]/10 rounded-lg flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-[#00B894]/20' : 'bg-[#00B894]/10'}`}>
                     <Star className="w-4 h-4 text-[#00B894] fill-current" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalClassExp}</p>
+                    <p className={`text-[10px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.totalClassExp}</p>
                     <p className="text-sm font-black text-[#00B894]">{students.reduce((acc, s) => acc + (s.exp || 0), 0)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#6C5CE7]/10 rounded-lg flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-[#6C5CE7]/20' : 'bg-[#6C5CE7]/10'}`}>
                     <Users className="w-4 h-4 text-[#6C5CE7]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[#636E72] uppercase tracking-wider">{t.totalStudents}</p>
+                    <p className={`text-[10px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.totalStudents}</p>
                     <p className="text-sm font-black text-[#6C5CE7]">{students.length}</p>
                   </div>
                 </div>
@@ -2527,12 +2757,20 @@ export default function App() {
             {isTeacher && !loggedInStudentId && (
               <button 
                 onClick={() => setIsAddingStudent(true)}
-                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#00B894] hover:bg-[#F0FFF4] transition-all group shadow-sm"
+                className={`aspect-square border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group shadow-sm ${
+                  theme === 'dark' 
+                    ? 'bg-[#1E1E1E] border-[#404040] hover:border-[#00B894] hover:bg-[#00B894]/5' 
+                    : 'bg-white border-[#DFE6E9] hover:border-[#00B894] hover:bg-[#F0FFF4]'
+                }`}
               >
-                <div className="w-10 h-10 bg-[#F1F3F5] rounded-xl flex items-center justify-center group-hover:bg-[#00B894] transition-colors">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:bg-[#00B894] transition-colors ${
+                  theme === 'dark' ? 'bg-[#333333]' : 'bg-[#F1F3F5]'
+                }`}>
                   <Plus className="w-5 h-5 text-[#636E72] group-hover:text-white" />
                 </div>
-                <span className="text-[10px] font-black text-[#636E72] group-hover:text-[#00B894] text-center px-1">{t.addStudentBtn}</span>
+                <span className={`text-[10px] font-black group-hover:text-[#00B894] text-center px-1 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'
+                }`}>{t.addStudentBtn}</span>
               </button>
             )}
 
@@ -2540,194 +2778,201 @@ export default function App() {
             {isTeacher && !loggedInStudentId && (
               <button 
                 onClick={() => setIsStudentPasswordModalOpen(true)}
-                className="aspect-square bg-white border-2 border-dashed border-[#DFE6E9] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#6C5CE7] hover:bg-[#F5F3FF] transition-all group shadow-sm"
+                className={`aspect-square border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group shadow-sm ${
+                  theme === 'dark' 
+                    ? 'bg-[#1E1E1E] border-[#404040] hover:border-[#6C5CE7] hover:bg-[#6C5CE7]/5' 
+                    : 'bg-white border-[#DFE6E9] hover:border-[#6C5CE7] hover:bg-[#F5F3FF]'
+                }`}
               >
-                <div className="w-10 h-10 bg-[#F1F3F5] rounded-xl flex items-center justify-center group-hover:bg-[#6C5CE7] transition-colors">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:bg-[#6C5CE7] transition-colors ${
+                  theme === 'dark' ? 'bg-[#333333]' : 'bg-[#F1F3F5]'
+                }`}>
                   <Lock className="w-5 h-5 text-[#636E72] group-hover:text-white" />
                 </div>
-                <span className="text-[10px] font-black text-[#636E72] group-hover:text-[#6C5CE7] text-center px-1">{t.studentPassword}</span>
+                <span className={`text-[10px] font-black group-hover:text-[#6C5CE7] text-center px-1 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'
+                }`}>{t.studentPassword}</span>
               </button>
             )}
 
-            {students.map((student) => {
-              const stage = Math.floor(student.points / 30);
-              const isSelf = loggedInStudentId === student.id;
-              const canClick = loggedInStudentId ? isSelf : isTeacher;
-              
-              let borderColor = 'border-[#E1E4E8]';
-              let hoverBorderColor = 'hover:border-[#00B894]/30';
-              
-              if (stage >= 1 && stage <= 20) {
-                borderColor = 'border-[#74b9ff]'; // Blue
-                hoverBorderColor = 'hover:border-[#0984e3]';
-              } else if (stage >= 21 && stage <= 30) {
-                borderColor = 'border-[#ffeaa7]'; // Yellow
-                hoverBorderColor = 'hover:border-[#d6a01e]';
-              } else if (stage >= 31 && stage <= 40) {
-                borderColor = 'border-[#a29bfe]'; // Purple
-                hoverBorderColor = 'hover:border-[#6c5ce7]';
-              } else if (stage > 40) {
-                borderColor = 'border-[#fab1a0]'; // Red/Orange for higher levels
-                hoverBorderColor = 'hover:border-[#e17055]';
-              }
-
-              return (
-                <motion.div
-                  key={student.id}
-                  layoutId={student.id}
-                  whileHover={canClick ? { y: -5 } : {}}
-                  onClick={() => {
-                    if (canClick) {
-                      if (isTeacher) {
-                        setSelectedStudent(student);
-                      } else if (isSelf) {
-                        // Students can view their own profile but not award points
-                        setSelectedStudent(student);
-                      }
-                    } else if (loggedInStudentId) {
-                      // Show feedback that they can't click others
-                      alert(t.onlyOwnProfile);
-                    }
-                  }}
-                  className={`bg-white rounded-3xl p-3 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-2 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
-                >
-                {/* Edit Button */}
-                {isTeacher && !loggedInStudentId && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditStudent(student);
-                    }}
-                    className="absolute top-3 right-3 p-1.5 bg-[#F1F3F5] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E1E4E8] z-10"
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-[#636E72]" />
-                  </button>
-                )}
-
-                {/* Avatar Area - Rounded Square Box */}
-                <div 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!(isTeacher && !loggedInStudentId) && !isSelf) return;
-                    setPowerModalMode('avatar');
-                    setPowerModalStudent(student);
-                  }}
-                  className={`w-full aspect-square bg-[#F1F3F5] rounded-2xl flex items-center justify-center overflow-hidden relative ${((isTeacher && !loggedInStudentId) || isSelf) ? 'cursor-pointer group/avatar' : ''}`}
-                >
-                  {student.equippedSpecialPet ? (
-                    <img 
-                      src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
-                      alt="" 
-                      className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer" 
-                    />
-                  ) : student.equippedPet !== null ? (
-                    <span className="text-5xl animate-bounce-slow">
-                      {getPetEmoji(student.equippedPet)}
-                    </span>
-                  ) : (
-                    <img 
-                      src={student.avatar} 
-                      alt={student.name} 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  )}
-                  {((isTeacher && !loggedInStudentId) || isSelf) && (
-                    <div className="absolute inset-0 bg-black/0 group-hover/avatar:bg-black/5 transition-colors flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-white opacity-0 group-hover/avatar:opacity-100 transition-opacity drop-shadow-md" />
-                    </div>
-                  )}
-
-                  {/* Medal Badge */}
-                  {(student.medals || 0) > 0 && (
-                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-xl shadow-md border border-[#6C5CE7]/20 flex items-center gap-1 z-10 transition-all duration-500">
-                      <Medal className="w-3.5 h-3.5 text-[#6C5CE7] fill-current" />
-                      <span className="text-xs font-black text-[#6C5CE7]">{student.medals}</span>
-                    </div>
-                  )}
-                </div>
+              {students.map((student) => {
+                const level = Math.floor((student.points || 0) / 100) + 1;
+                const currentXP = (student.points || 0) % 100;
+                const maxXP = 100;
+                const progress = (currentXP / maxXP) * 100;
+                const isSelf = loggedInStudentId === student.id;
+                const canClick = loggedInStudentId ? isSelf : isTeacher;
                 
-                <div className="text-center w-full">
-                  <h3 className="font-black text-sm text-[#2D3436] uppercase tracking-wider truncate px-1">{student.name}</h3>
-                </div>
+                let borderColor = 'border-[#E1E4E8]';
+                let hoverBorderColor = 'hover:border-[#00B894]/30';
+                let levelBg = 'bg-[#74b9ff]';
+                let barBg = 'bg-[#74b9ff]/10';
+                let progressBg = 'bg-[#74b9ff]';
                 
-                {/* Info Stack */}
-                <div className="w-full space-y-1.5">
-                  {/* Points Pill - Moved Above Level */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isTeacher) {
-                        setSelectedStudent(student);
-                      } else if (isSelf) {
-                        setSelectedStudent(student);
+                if (level < 20) {
+                  borderColor = 'border-[#74b9ff]/30';
+                  levelBg = 'bg-[#74b9ff]';
+                  barBg = 'bg-[#74b9ff]/10';
+                  progressBg = 'bg-[#74b9ff]';
+                } else if (level >= 20 && level < 40) {
+                  borderColor = 'border-[#ffeaa7]';
+                  levelBg = 'bg-[#ffeaa7]';
+                  barBg = 'bg-[#ffeaa7]/20';
+                  progressBg = 'bg-[#ffeaa7]';
+                } else if (level >= 40 && level < 50) {
+                  borderColor = 'border-[#fab1a0]';
+                  levelBg = 'bg-[#fab1a0]';
+                  barBg = 'bg-[#fab1a0]/10';
+                  progressBg = 'bg-[#fab1a0]';
+                } else {
+                  borderColor = 'border-[#ff7675]';
+                  levelBg = 'bg-[#ff7675]';
+                  barBg = 'bg-[#ff7675]/10';
+                  progressBg = 'bg-[#ff7675]';
+                }
+
+                return (
+                  <motion.div
+                    key={student.id}
+                    layoutId={student.id}
+                    whileHover={canClick ? { y: -5 } : {}}
+                    onClick={() => {
+                      if (canClick) {
+                        if (isTeacher) {
+                          setSelectedStudent(student);
+                        } else if (isSelf) {
+                          setSelectedStudent(student);
+                        }
+                      } else if (loggedInStudentId) {
+                        alert(t.onlyOwnProfile);
                       }
                     }}
-                    className="w-full py-1 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-1.5 hover:bg-[#E1E4E8] transition-colors"
+                    className={`${
+                      theme === 'dark' ? 'bg-[#1E1E1E]' : 'bg-white'
+                    } rounded-3xl p-3 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-2 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
                   >
-                    <Star className="w-3 h-3 text-[#F1C40F] fill-current" />
-                    <span className="text-[9px] font-black text-[#636E72]">
-                      {student.points} {t.pointsUnit}
-                    </span>
-                  </button>
+                  {/* Edit Button */}
+                  {isTeacher && !loggedInStudentId && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditStudent(student);
+                      }}
+                      className={`absolute top-3 right-3 p-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
+                        theme === 'dark' ? 'bg-[#333333] hover:bg-[#444444]' : 'bg-[#F1F3F5] hover:bg-[#E1E4E8]'
+                      }`}
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-[#636E72]" />
+                    </button>
+                  )}
 
-                  {/* Stage Pill */}
-                  <div className="w-full py-1 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-1.5 border border-[#E1E4E8]/50">
-                    <Award className="w-3 h-3 text-[#0984E3] fill-current" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#636E72]">
-                      {t.stage} {Math.floor((student.points || 0) / 30)}
-                    </span>
-                  </div>
-
-                  {/* Power Pill */}
-                  <button 
+                  {/* Avatar Area */}
+                  <div 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!(isTeacher && !loggedInStudentId) && !isSelf) return;
-                      setPowerModalMode('pet');
-                      setPowerModalStudent(student);
+                      if ((isTeacher && !loggedInStudentId) || isSelf) {
+                        setPowerModalMode('avatar');
+                        setPowerModalStudent(student);
+                      }
                     }}
-                    className={`w-full py-1 rounded-xl bg-[#F1F3F5] flex items-center justify-center gap-1.5 border border-[#E1E4E8]/50 transition-colors ${((isTeacher && !loggedInStudentId) || isSelf) ? 'hover:bg-[#E1E4E8]' : ''}`}
+                    className={`w-full aspect-square rounded-2xl flex items-center justify-center overflow-hidden relative cursor-pointer group ${
+                      theme === 'dark' ? 'bg-[#333333]' : 'bg-[#F1F3F5]'
+                    }`}
                   >
-                    <Zap className="w-3 h-3 text-[#6C5CE7] fill-current" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#636E72]">
-                      {t.power}: {getPetPower(student)}
-                    </span>
-                  </button>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors z-10 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                       <Package className="w-6 h-6 text-white/80" />
+                    </div>
+                    {student.equippedSpecialPet ? (
+                      <img 
+                        src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
+                        alt="" 
+                        className="w-full h-full object-cover" 
+                        referrerPolicy="no-referrer" 
+                      />
+                    ) : student.equippedPet !== null ? (
+                      <span className="text-5xl animate-bounce-slow">
+                        {getPetEmoji(student.equippedPet)}
+                      </span>
+                    ) : (
+                      <img 
+                        src={student.avatar} 
+                        alt={student.name} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
 
-                  {/* Coins Pill - Restored */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isTeacher) return;
-                      setCoinsModalStudent(student);
-                    }}
-                    className="w-full py-1 rounded-xl bg-[#F1F3F5] border border-[#E1E4E8]/50 flex items-center justify-center gap-1.5 hover:bg-[#E1E4E8] transition-colors"
-                  >
-                    <Coins className="w-3 h-3 text-[#F39C12] fill-current" />
-                    <span className="text-[9px] font-black text-[#636E72]">
-                      {student.coins || 0} {t.coins}
-                    </span>
-                  </button>
-                </div>
+                    {/* Medal Badge */}
+                    {(student.medals || 0) > 0 && (
+                      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-xl shadow-md border border-[#6C5CE7]/20 flex items-center gap-1 z-10 transition-all duration-500">
+                        <Medal className="w-3.5 h-3.5 text-[#6C5CE7] fill-current" />
+                        <span className="text-xs font-black text-[#6C5CE7]">{student.medals}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="text-center w-full">
+                    <h3 className={`font-black text-sm uppercase tracking-wider truncate px-1 ${
+                      theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'
+                    }`}>{student.name}</h3>
+                  </div>
+                  
+                  {/* Experience Bar Design Matching Image */}
+                  <div className="w-full h-8 rounded-lg overflow-hidden border border-[#E1E4E8]/30 flex relative">
+                    <div className={`${levelBg} px-2 flex items-center justify-center text-white text-[9px] font-black whitespace-nowrap min-w-[70px] z-10`}>
+                      LEVEL {level}
+                    </div>
+                    <div className={`flex-1 ${barBg} relative flex items-center justify-end px-2`}>
+                      <div 
+                        className={`absolute left-0 top-0 bottom-0 ${progressBg} opacity-20 transition-all duration-1000`} 
+                        style={{ width: `${progress}%` }} 
+                      />
+                      <span className="text-[9px] font-black text-[#636E72] relative z-10">
+                        {currentXP} / {maxXP} XP
+                      </span>
+                    </div>
+                  </div>
 
-                {/* Progress Bar (Experience) */}
-                <div className="w-full px-2 mt-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-black text-[#B2BEC3] uppercase tracking-wider">{t.exp}: {(student.points || 0) * 10}</span>
-                    <span className="text-[9px] font-black text-[#00B894] bg-[#00B894]/10 px-1.5 rounded-md">
-                      {t.stage} {Math.floor((student.points || 0) / 30)}
+                  {/* Info Row for Power and Coins */}
+                  <div className="w-full grid grid-cols-2 gap-1.5 mt-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!(isTeacher && !loggedInStudentId) && !isSelf) return;
+                        setPowerModalMode('pet');
+                        setPowerModalStudent(student);
+                      }}
+                      className={`py-1 rounded-xl bg-[#FFF5F5] flex items-center justify-center gap-1 border border-[#FEB2B2]/30 transition-colors ${((isTeacher && !loggedInStudentId) || isSelf) ? 'hover:bg-[#FEB2B2]/20' : ''}`}
+                    >
+                      <Zap className="w-2.5 h-2.5 text-[#F56565] fill-current" />
+                      <span className="text-[8px] font-black text-[#F56565] uppercase truncate">
+                         {t.power}: {student.equippedSpecialPet ? (specialPets.find(p => p.id === student.equippedSpecialPet)?.power || 0) : getPetPower(student)}
+                      </span>
+                    </button>
+
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isTeacher) {
+                          setCoinsModalStudent(student);
+                        }
+                      }}
+                      className={`py-1 rounded-xl bg-[#FFFBEB] flex items-center justify-center gap-1 border border-[#FDE68A]/30 transition-colors ${isTeacher ? 'hover:bg-[#FDE68A]/20 cursor-pointer' : ''}`}
+                    >
+                      <Coins className="w-2.5 h-2.5 text-[#F6AD55] fill-current" />
+                      <span className="text-[8px] font-black text-[#F6AD55] uppercase truncate">
+                        {student.coins}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Class Label Matching Image */}
+                  <div className={`w-full py-1 rounded-xl flex items-center justify-center border ${borderColor} mt-1`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${level.toString() === '1' ? 'text-[#636E72]' : ''}`}>
+                      {level < 20 ? 'B CLASS' : level < 40 ? 'A CLASS' : level < 50 ? 'S CLASS' : 'GOD CLASS'}
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-[#F1F3F5] rounded-full overflow-hidden border border-[#E1E4E8]/30">
-                    <div 
-                      className="h-full bg-[#00B894] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(0,184,148,0.4)]" 
-                      style={{ width: `${(((student.points || 0) % 30) / 30) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
               );
             })}
           </motion.div>
@@ -3000,6 +3245,92 @@ export default function App() {
                   </button>
                 </div>
               </div>
+            ) : !bossCombatStarted ? (
+              <div className="bg-white rounded-[3rem] p-12 shadow-sm border border-[#E1E4E8] text-center">
+                <div className="flex items-center gap-4 mb-8">
+                  <button 
+                    onClick={() => setBossDifficulty(null)}
+                    className="p-3 bg-[#F1F3F5] rounded-2xl hover:bg-[#E1E4E8] transition-all"
+                  >
+                    <X className="w-5 h-5 text-[#636E72]" />
+                  </button>
+                  <h2 className="text-3xl font-black">{t.bossBattle} - 戰鬥設定</h2>
+                </div>
+
+                <div className="max-w-md mx-auto mb-10">
+                  <label className="block text-sm font-black text-[#636E72] uppercase tracking-widest mb-3">怪物血量 (HP)</label>
+                  <input 
+                    type="number"
+                    value={customBossHp}
+                    onChange={(e) => setCustomBossHp(Math.max(1, parseInt(e.target.value) || 0))}
+                    className="w-full bg-[#F1F3F5] rounded-3xl p-6 text-2xl font-black text-center border-4 border-[#6C5CE7] focus:ring-4 focus:ring-[#6C5CE7]/20 transition-all outline-none"
+                  />
+                  <p className="mt-2 text-xs text-gray-500 font-bold">預設血量: {
+                    bossDifficulty === 'simple' ? 3500 :
+                    bossDifficulty === 'medium' ? 5000 :
+                    bossDifficulty === 'hard' ? 8800 : 12500
+                  }</p>
+                </div>
+
+                <div className="mb-10">
+                  <div className="flex justify-between items-center mb-4 px-2">
+                    <label className="text-sm font-black text-[#636E72] uppercase tracking-widest">選擇參戰學生 ({selectedCombatStudents.size}/{students.length})</label>
+                    <button 
+                      onClick={() => {
+                        if (selectedCombatStudents.size === students.length) {
+                          setSelectedCombatStudents(new Set());
+                        } else {
+                          setSelectedCombatStudents(new Set(students.map(s => s.id)));
+                        }
+                      }}
+                      className="text-xs font-black text-[#6C5CE7] hover:underline"
+                    >
+                      {selectedCombatStudents.size === students.length ? '取消全選' : '全選學生'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 max-h-60 overflow-y-auto p-2 custom-scrollbar">
+                    {students.map(student => (
+                      <button
+                        key={student.id}
+                        onClick={() => toggleStudentCombatSelection(student.id)}
+                        className={`group relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all ${
+                          selectedCombatStudents.has(student.id)
+                            ? 'bg-[#6C5CE7]/10 border-[#6C5CE7] shadow-md'
+                            : 'bg-white border-[#E1E4E8] grayscale opacity-40 hover:opacity-70'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#F1F3F5]">
+                          {student.equippedSpecialPet ? (
+                            <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} className="w-full h-full object-cover" alt="" />
+                          ) : student.equippedPet !== null ? (
+                            <span className="text-xl flex items-center justify-center h-full">{getPetEmoji(student.equippedPet)}</span>
+                          ) : (
+                            <img src={student.avatar} className="w-full h-full object-cover" alt="" />
+                          )}
+                        </div>
+                        <span className="text-[8px] font-bold truncate w-full px-1">{student.name}</span>
+                        {selectedCombatStudents.has(student.id) && (
+                          <div className="absolute -top-1 -right-1 bg-[#6C5CE7] text-white rounded-full p-0.5">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={confirmBossSetup}
+                  disabled={selectedCombatStudents.size === 0}
+                  className={`w-full max-w-md py-5 rounded-3xl font-black text-xl shadow-xl transition-all ${
+                    selectedCombatStudents.size === 0
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#6C5CE7] text-white hover:scale-105 active:scale-95 shadow-[#6C5CE7]/30'
+                  }`}
+                >
+                  開始戰鬥！
+                </button>
+              </div>
             ) : (
               <div className="space-y-8">
                 <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-[#E1E4E8] text-center relative overflow-hidden">
@@ -3100,25 +3431,24 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
-                  {students.map(student => (
-                    <motion.button
+                  {students.filter(s => selectedCombatStudents.has(s.id)).map(student => (
+                    <motion.div
                       key={student.id}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleAttackBoss(student)}
-                      disabled={isBossDefeated}
-                      className="bg-white p-2 rounded-2xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                      className="bg-white p-2 rounded-2xl border border-[#E1E4E8] shadow-sm hover:shadow-md transition-all group relative cursor-pointer flex flex-col items-center"
                     >
-                      <div className="relative w-12 h-12 mx-auto mb-2 bg-[#F1F3F5] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                      <div className="relative w-12 h-12 mb-2 bg-[#F1F3F5] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                         {student.equippedSpecialPet ? (
                           <img 
                             src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
                             alt="" 
-                            className="w-full h-full object-cover" 
-                            referrerPolicy="no-referrer" 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
                           />
                         ) : student.equippedPet !== null ? (
-                          <span className="text-3xl">
+                          <span className="text-3xl flex items-center justify-center h-full">
                             {getPetEmoji(student.equippedPet)}
                           </span>
                         ) : (
@@ -3130,18 +3460,36 @@ export default function App() {
                           />
                         )}
                       </div>
-                      <p className="font-bold text-sm text-[#2D3436] truncate">{student.name}</p>
-                      <div className="mt-2 flex items-center justify-center gap-1 text-[10px] font-black text-[#6C5CE7] uppercase tracking-wider">
-                        <Zap className="w-3 h-3 fill-current" />
+                      <p className="font-bold text-[10px] text-[#2D3436] truncate w-full text-center">{student.name}</p>
+                      <div className="mt-1 flex items-center justify-center gap-1 text-[9px] font-black text-[#6C5CE7] uppercase tracking-wider">
+                        <Zap className="w-2.5 h-2.5 fill-current" />
                         {getPetPower(student)}
                       </div>
+
+                      {isTeacher && !loggedInStudentId && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAttackBoss(student, true);
+                          }}
+                          disabled={isBossDefeated || criticalUsed[student.id]}
+                          className={`mt-2 w-full py-1 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 ${
+                            criticalUsed[student.id] 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : 'bg-[#F368E0] text-white hover:scale-105 shadow-sm'
+                          }`}
+                        >
+                          <Flame className="w-2.5 h-2.5" />
+                          暴擊
+                        </button>
+                      )}
                       
                       {damageDealt[student.id] > 0 && (
-                        <div className="absolute top-2 right-2 bg-[#6C5CE7] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full">
-                          {damageDealt[student.id]}
+                        <div className="absolute top-1 right-1 bg-[#6C5CE7] text-white text-[7px] font-black px-1 py-0.5 rounded-full">
+                          -{damageDealt[student.id]}
                         </div>
                       )}
-                    </motion.button>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -3380,7 +3728,6 @@ export default function App() {
                 )}
               </div>
               
-              {powerModalMode === 'avatar' && (
                 <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] flex gap-4 justify-center">
                   <button 
                     onClick={() => setPowerModalMode('avatar')}
@@ -3395,9 +3742,8 @@ export default function App() {
                     {t.petAvatar}
                   </button>
                 </div>
-              )}
 
-              {powerModalMode === 'pet' ? (
+                {powerModalMode === 'pet' ? (
                 <>
                   <div className="p-4 bg-[#F8F9FA] border-b border-[#F1F3F5] overflow-x-auto whitespace-nowrap flex gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tier => {
@@ -3445,37 +3791,74 @@ export default function App() {
                         );
                       }
 
-                      return PETS.filter(p => p.tier === selectedPetTier).sort((a, b) => a.price - b.price).map(pet => {
-                        const isOwned = (powerModalStudent.ownedPets || []).includes(pet.id);
-                        const isEquipped = powerModalStudent.equippedPet === pet.id;
+                      const tierPets = PETS.filter(p => p.tier === selectedPetTier);
+                      const tierSpecialPets = specialPets.filter(p => (p.tier || p.power) === selectedPetTier);
+                      
+                      const allTierPets = [
+                        ...tierPets.map(p => ({ ...p, isSystem: true })),
+                        ...tierSpecialPets.map(p => ({ ...p, isSystem: false }))
+                      ].sort((a, b) => a.price - b.price);
+
+                      if (allTierPets.length === 0) {
+                        return (
+                          <div className="col-span-2 py-12 flex flex-col items-center justify-center text-center opacity-50">
+                            <Package className="w-8 h-8 text-gray-400 mb-2" />
+                            <p className="text-xs font-bold text-gray-500">此等級目前沒有寵物</p>
+                          </div>
+                        );
+                      }
+
+                      return allTierPets.map(pet => {
+                        const isOwned = pet.isSystem 
+                          ? (powerModalStudent.ownedPets || []).includes(pet.id)
+                          : (powerModalStudent.ownedSpecialPets || []).includes(pet.id);
+                        
+                        const isEquipped = pet.isSystem
+                          ? powerModalStudent.equippedPet === pet.id
+                          : powerModalStudent.equippedSpecialPet === pet.id;
+                          
                         const canAfford = (powerModalStudent.coins || 0) >= pet.price;
                         
                         return (
                           <button
-                            key={pet.id}
-                            disabled={!isOwned && (pet.isSpecial || !canAfford)}
-                            onClick={() => handleSelectPet(powerModalStudent.id, pet.id)}
+                            key={pet.isSystem ? `sys-${pet.id}` : `spec-${pet.id}`}
+                            disabled={!isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford)}
+                            onClick={() => {
+                              if (pet.isSystem) {
+                                handleSelectPet(powerModalStudent.id, pet.id);
+                              } else {
+                                if (isOwned) {
+                                  handleSelectSpecialPet(powerModalStudent.id, pet.id);
+                                } else {
+                                  handleBuySpecialPet(pet as any, powerModalStudent.id);
+                                }
+                              }
+                            }}
                             className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all relative group ${
                               isEquipped 
                                 ? 'bg-[#F1F3F5] ring-2 ring-[#6C5CE7]' 
-                                : !isOwned && (pet.isSpecial || !canAfford)
+                                : !isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford)
                                   ? 'opacity-50 grayscale cursor-not-allowed bg-gray-50' 
                                   : 'hover:bg-[#F1F3F5]'
                             }`}
                           >
-                            {!isOwned && (pet.isSpecial || !canAfford) && (
+                            {!isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford) && (
                               <div className="absolute top-2 right-2">
                                 <Lock className="w-3 h-3 text-[#636E72]" />
                               </div>
                             )}
-                            <span className="text-4xl group-hover:scale-110 transition-transform">{pet.emoji}</span>
-                            <span className="text-sm font-bold">{t[`pet_${pet.id}`] || pet.name}</span>
+                            {pet.isSystem ? (
+                              <span className="text-4xl group-hover:scale-110 transition-transform">{pet.emoji}</span>
+                            ) : (
+                              <img src={pet.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover group-hover:scale-110 transition-transform" />
+                            )}
+                            <span className="text-sm font-bold">{pet.isSystem ? (t[`pet_${pet.id}`] || pet.name) : pet.name}</span>
                             <div className="flex flex-col items-center gap-1">
                               <span className="text-[10px] font-black text-[#6C5CE7] bg-[#6C5CE7]/10 px-2 py-0.5 rounded-full">
                                 {pet.power} {t.energyUnit}
                               </span>
                               <span className={`text-[10px] font-black flex items-center gap-1 ${isEquipped ? 'text-[#00B894]' : isOwned ? 'text-[#0984E3]' : 'text-[#F39C12]'}`}>
-                                {isEquipped ? t.equipped : isOwned ? t.owned : pet.isSpecial ? t.inLevel3Chest : `${pet.price} ${t.coins}`}
+                                {isEquipped ? t.equipped : isOwned ? t.owned : (pet.isSystem && pet.isSpecial) ? t.inLevel3Chest : `${pet.price} ${t.coins}`}
                               </span>
                             </div>
                           </button>
@@ -3483,7 +3866,10 @@ export default function App() {
                       });
                     })()}
                     <button
-                      onClick={() => handleSelectPet(powerModalStudent.id, 0)}
+                      onClick={() => {
+                        handleSelectPet(powerModalStudent.id, 0);
+                        handleSelectSpecialPet(powerModalStudent.id, '');
+                      }}
                       className="col-span-2 mt-2 py-3 rounded-xl text-sm font-bold text-[#D63031] hover:bg-[#FFF5F5] transition-colors"
                     >
                       {t.removePet}
@@ -3559,13 +3945,13 @@ export default function App() {
               <div className="p-8 text-center border-b border-[#F1F3F5]">
                 <div 
                   onClick={() => {
-                    if (loggedInStudentId === selectedStudent.id) {
+                    if ((isTeacher && !loggedInStudentId) || loggedInStudentId === selectedStudent.id) {
                       setPowerModalMode('avatar');
                       setPowerModalStudent(selectedStudent);
                       setSelectedStudent(null);
                     }
                   }}
-                  className={`relative mx-auto mb-4 w-24 h-24 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden ${loggedInStudentId === selectedStudent.id ? 'cursor-pointer group' : ''}`}
+                  className={`relative mx-auto mb-4 w-24 h-24 rounded-full bg-[#F1F3F5] flex items-center justify-center overflow-hidden ${((isTeacher && !loggedInStudentId) || loggedInStudentId === selectedStudent.id) ? 'cursor-pointer group' : ''}`}
                 >
                   {selectedStudent.equippedSpecialPet ? (
                     <img 
@@ -3819,7 +4205,9 @@ export default function App() {
       </AnimatePresence>
 
       {/* Mobile Nav */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E1E4E8] sm:hidden z-20">
+      <footer className={`fixed bottom-0 left-0 right-0 border-t sm:hidden z-20 transition-colors ${
+        theme === 'dark' ? 'bg-[#1E1E1E] border-[#444444]' : 'bg-white border-[#E1E4E8]'
+      }`}>
         <div className="flex justify-around p-2">
           <button 
             onClick={() => setActiveTab('classroom')}
@@ -4585,14 +4973,58 @@ export default function App() {
                         <input 
                           type="number"
                           value={newSpecialPet.power}
-                          onChange={(e) => setNewSpecialPet({...newSpecialPet, power: Math.max(0, parseInt(e.target.value) || 0)})}
+                          onChange={(e) => {
+                            setNewSpecialPet({...newSpecialPet, power: Math.max(1, parseInt(e.target.value) || 0)});
+                          }}
                           className="w-full bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                          placeholder="輸入數據..."
                         />
                       </div>
                     </div>
+
+                    <div className="mt-4">
+                      <label className="block text-xs font-black text-[#636E72] uppercase tracking-widest mb-2">出現等級 (Stage/Tier)</label>
+                      <div className="flex gap-2 mb-2">
+                        <input 
+                          type="number"
+                          value={newSpecialPet.tier}
+                          onChange={(e) => setNewSpecialPet({...newSpecialPet, tier: Math.max(1, parseInt(e.target.value) || 1)})}
+                          className="flex-1 bg-[#F1F3F5] rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all"
+                        />
+                        <button 
+                          onClick={() => setShowLevelSelector(!showLevelSelector)}
+                          className="px-4 bg-[#F1F3F5] rounded-2xl font-black text-[#6C5CE7] text-xs"
+                        >
+                          {showLevelSelector ? '關閉選擇器' : '快速選擇器'}
+                        </button>
+                      </div>
+                      
+                      {showLevelSelector && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="grid grid-cols-5 gap-2 p-3 bg-[#F1F3F5] rounded-2xl border border-[#E1E4E8]"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => {
+                                setNewSpecialPet({ ...newSpecialPet, tier: level });
+                              }}
+                              className={`py-3 rounded-xl font-black text-sm transition-all ${newSpecialPet.tier === level ? 'bg-[#F368E0] text-white shadow-md scale-105' : 'bg-white text-[#636E72] hover:bg-[#E1E4E8]'}`}
+                            >
+                              {level}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </div>
                     <div className="flex gap-4 pt-4">
                       <button 
-                        onClick={() => setIsAddingSpecialPet(false)}
+                        onClick={() => {
+                          setIsAddingSpecialPet(false);
+                          setShowLevelSelector(false);
+                        }}
                         className="flex-1 py-4 bg-[#F1F3F5] text-[#636E72] rounded-2xl font-black hover:bg-[#E1E4E8] transition-colors"
                       >
                         {t.cancel}
@@ -4640,6 +5072,9 @@ export default function App() {
                             <div className="flex items-center justify-center gap-2 mt-1">
                               <span className="px-2 py-0.5 bg-[#6C5CE7]/10 text-[#6C5CE7] rounded-lg text-[10px] font-black">
                                 +{pet.power} Power
+                              </span>
+                              <span className="px-2 py-0.5 bg-[#00B894]/10 text-[#00B894] rounded-lg text-[10px] font-black">
+                                {t.stage} {pet.tier || pet.power}
                               </span>
                             </div>
                           </div>

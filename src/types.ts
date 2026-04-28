@@ -20,6 +20,7 @@ export interface SpecialPet {
   price: number;
   imageUrl: string;
   power: number;
+  tier: number;
   createdAt: any;
 }
 
