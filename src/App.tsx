@@ -40,7 +40,9 @@ import {
   Image as ImageIcon,
   ZoomIn,
   ZoomOut,
-  Maximize2
+  Maximize2,
+  Shuffle,
+  Dices
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework, SpecialPet } from './types';
@@ -291,6 +293,11 @@ const TRANSLATIONS = {
     congratulations: '恭喜获得！',
     newPet: '新宠物：',
     awesome: '太棒了！',
+    randomPicker: '抽学生',
+    pickStudent: '开始抽取',
+    pickingStudent: '正在抽取中...',
+    andTheWinnerIs: '恭喜这位同学！',
+    confirmPick: '确定',
     passwordErrorDetail: '密码错误或找不到该学生。',
     confirmDeleteStudent: '确定要删除这位学生吗？此操作无法撤销。',
     studentStatus: '学生身份',
@@ -298,6 +305,12 @@ const TRANSLATIONS = {
     studentCount: '学生人数',
     studentPerformance: '学生表现',
     homeworkAnswerPlaceholder: '学生输入此答案即可获得奖励',
+    migrateTitle: '发现之前的班级',
+    migrateDesc: '发现您之前在游客模式下创建的班级「{name}」，是否要将其导入到您的账号中？',
+    migrateBtn: '立即导入',
+    migrateIgnore: '忽略',
+    importSuccess: '同步成功！',
+    importFailed: '同步失敗，請稍後再試。',
     createYourClass: '创建您的班级',
     classNameLabel: '班级名称',
     startManagingClass: '开始管理班级',
@@ -459,6 +472,11 @@ const TRANSLATIONS = {
     congratulations: '恭喜獲得！',
     newPet: '新寵物：',
     awesome: '太棒了！',
+    randomPicker: '抽學生',
+    pickStudent: '開始抽取',
+    pickingStudent: '正在抽取中...',
+    andTheWinnerIs: '恭喜這位同學！',
+    confirmPick: '確定',
     passwordErrorDetail: '密碼錯誤或找不到該學生。',
     confirmDeleteStudent: '確定要刪除這位學生嗎？此操作無法撤銷。',
     studentStatus: '學生身份',
@@ -466,6 +484,12 @@ const TRANSLATIONS = {
     studentCount: '學生人數',
     studentPerformance: '學生表現',
     homeworkAnswerPlaceholder: '學生輸入此答案即可獲得獎勵',
+    migrateTitle: '發現之前的班級',
+    migrateDesc: '發現您之前在遊客模式下創建的班級「{name}」，是否要將其導入到您的賬號中？',
+    migrateBtn: '立即導入',
+    migrateIgnore: '忽略',
+    importSuccess: '同步成功！',
+    importFailed: '同步失敗，請稍後再試。',
     createYourClass: '創建您的班級',
     classNameLabel: '班級名稱',
     startManagingClass: '開始管理班級',
@@ -627,6 +651,11 @@ const TRANSLATIONS = {
     congratulations: 'Tahniah!',
     newPet: 'Haiwan Peliharaan Baru: ',
     awesome: 'Hebat!',
+    randomPicker: 'Pilih Pelajar',
+    pickStudent: 'Mula Memilih',
+    pickingStudent: 'Sedang memilih...',
+    andTheWinnerIs: 'Tahniah kepada pelajar ini!',
+    confirmPick: 'Sahkan',
     passwordErrorDetail: 'Kata laluan salah atau pelajar tidak dijumpai.',
     confirmDeleteStudent: 'Adakah anda pasti mahu memadam pelajar ini? Tindakan ini tidak boleh diubah.',
     studentStatus: 'Status Pelajar',
@@ -794,6 +823,11 @@ const TRANSLATIONS = {
     powerLeaderboard: 'Power Leaderboard',
     congratulations: 'Congratulations!',
     newPet: 'New Pet: ',
+    randomPicker: 'Random Picker',
+    pickStudent: 'Start Picking',
+    pickingStudent: 'Picking...',
+    andTheWinnerIs: 'Congratulations to this student!',
+    confirmPick: 'Confirm',
     awesome: 'Awesome!',
     passwordErrorDetail: 'Incorrect password or student not found.',
     confirmDeleteStudent: 'Are you sure you want to delete this student? This action cannot be undone.',
@@ -908,6 +942,12 @@ export default function App() {
   const [specialPets, setSpecialPets] = useState<SpecialPet[]>([]);
   const [isSpecialPetModalOpen, setIsSpecialPetModalOpen] = useState(false);
   const [isAddingSpecialPet, setIsAddingSpecialPet] = useState(false);
+  const [isPickerModalOpen, setIsPickerModalOpen] = useState(false);
+  const [isPicking, setIsPicking] = useState(false);
+  const [pickedStudent, setPickedStudent] = useState<Student | null>(null);
+  const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
+  const [localClassName, setLocalClassName] = useState<string | null>(null);
+  const [isMigrating, setIsMigrating] = useState(false);
   const [showLevelSelector, setShowLevelSelector] = useState(false);
   const [newSpecialPet, setNewSpecialPet] = useState<Partial<SpecialPet>>({
     name: '',
@@ -993,7 +1033,15 @@ export default function App() {
       setIsAuthLoading(false);
       if (currentUser) {
         setIsGuest(false);
-        setActiveClassId(currentUser.uid);
+        // Correcting: Do NOT set activeClassId to UID. It should be empty until a class is selected.
+        setActiveClassId(''); 
+        
+        // Check for local guest data to migrate
+        const savedClass = localStorage.getItem('dojo_class_name');
+        if (savedClass) {
+          setLocalClassName(savedClass);
+          setShowMigrationPrompt(true);
+        }
       }
     });
     return () => unsubscribe();
@@ -1244,6 +1292,22 @@ export default function App() {
     playSound('error');
   };
 
+  const startRandomPick = () => {
+    if (students.length === 0) return;
+    setIsPickerModalOpen(true);
+    setIsPicking(true);
+    setPickedStudent(null);
+    
+    // Selecting the winner immediately but delaying the reveal to sync with animation
+    const winner = students[Math.floor(Math.random() * students.length)];
+    
+    setTimeout(() => {
+      setIsPicking(false);
+      setPickedStudent(winner);
+      playSound('success');
+    }, 3000); 
+  };
+
   const handleHomeworkImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1312,6 +1376,40 @@ export default function App() {
     }
   };
 
+  const handleMigrateClass = async () => {
+    if (!user || !localClassName || isMigrating) return;
+    setIsMigrating(true);
+
+    try {
+      const savedStudents = localStorage.getItem('dojo_students');
+      const studentsToMigrate = savedStudents ? JSON.parse(savedStudents) : [];
+      
+      const newClassRef = doc(collection(db, 'classes'));
+      await setDoc(newClassRef, {
+        id: newClassRef.id,
+        name: localClassName,
+        teacherId: user.uid,
+        students: studentsToMigrate,
+        createdAt: new Date().toISOString()
+      });
+
+      // Clear local storage after successful migration
+      localStorage.removeItem('dojo_class_name');
+      localStorage.removeItem('dojo_students');
+      localStorage.removeItem('dojo_posts');
+      localStorage.removeItem('dojo_homeworks');
+      localStorage.removeItem('dojo_special_pets');
+      
+      setShowMigrationPrompt(false);
+      playSound('success');
+    } catch (error) {
+      console.error('Migration failed', error);
+      alert(t.importFailed);
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   const handleExit = async () => {
     if (view === 'app') {
       // If inside the app, just "Exit" to landing page without logging out
@@ -1327,9 +1425,7 @@ export default function App() {
         setEditingClassId(null);
         setEditingClassName('');
         setStudents(INITIAL_STUDENTS);
-        localStorage.removeItem('dojo_class_name');
-        localStorage.removeItem('dojo_students');
-        localStorage.removeItem('dojo_posts');
+        // Removed localStorage removal to allow data retention for guests
         setHasExited(false);
         setView('landing');
         console.log('Logout successful');
@@ -1774,6 +1870,64 @@ export default function App() {
             <button onClick={() => setLoginError(null)} className="ml-auto hover:opacity-70">✕</button>
           </motion.div>
         )}
+
+        {/* Migration Prompt */}
+        <AnimatePresence>
+          {showMigrationPrompt && localClassName && (
+            <motion.div 
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="max-w-md w-full mx-auto z-30 mb-8"
+            >
+              <div className={`p-6 rounded-3xl border-2 border-[#6C5CE7] shadow-xl relative overflow-hidden ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}>
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 bg-[#6C5CE7]/10 rounded-2xl flex items-center justify-center shrink-0">
+                    <Package className="w-6 h-6 text-[#6C5CE7]" />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                      {t.migrateTitle}
+                    </h3>
+                    <p className={`text-sm mt-1 leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
+                      {t.migrateDesc.replace('{name}', localClassName)}
+                    </p>
+                    <div className="flex gap-3 mt-4">
+                      <button 
+                        onClick={handleMigrateClass}
+                        disabled={isMigrating}
+                        className="flex-1 bg-[#6C5CE7] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#5B4BC4] transition-all disabled:opacity-50"
+                      >
+                        {isMigrating ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {t.migrateBtn}
+                          </>
+                        )}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          localStorage.removeItem('dojo_class_name');
+                          localStorage.removeItem('dojo_students');
+                          setShowMigrationPrompt(false);
+                        }}
+                        className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                          theme === 'dark' ? 'bg-[#2D3436] text-gray-400 hover:bg-[#4A5568]' : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E1E4E8]'
+                        }`}
+                      >
+                        {t.migrateIgnore}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Student Login Section - Prominent at the top */}
         <div className="max-w-md w-full mx-auto z-20 mt-12 mb-8">
@@ -2453,7 +2607,7 @@ export default function App() {
       theme === 'dark' ? 'bg-[#2D3436] text-gray-100' : 'bg-[#F5F7FA] text-[#2D3436]'
     }`}>
       {/* Header */}
-      <header className={`border-b transition-colors sticky top-0 z-10 ${
+      <header className={`border-b transition-colors sticky top-0 z-30 ${
         theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
       }`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -2603,6 +2757,15 @@ export default function App() {
                           >
                             <Trophy className="w-4 h-4" />
                             {t.leaderboard}
+                          </button>
+                          <button 
+                            onClick={() => { startRandomPick(); setIsToolboxOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                              theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                            }`}
+                          >
+                            <Shuffle className="w-4 h-4 text-[#6C5CE7]" />
+                            {t.randomPicker}
                           </button>
                         </>
                       )}
@@ -2802,14 +2965,17 @@ export default function App() {
             )}
 
               {students.map((student) => {
-                const level = Math.floor((student.points || 0) / 100) + 1;
-                const currentXP = (student.points || 0) % 100;
+                const xp = (student.points || 0) * 10;
+                const level = Math.floor(xp / 100) + 1;
+                const currentXP = xp % 100;
                 const maxXP = 100;
                 const progress = (currentXP / maxXP) * 100;
                 const isSelf = loggedInStudentId === student.id;
                 const canClick = loggedInStudentId ? isSelf : isTeacher;
                 
                 let borderColor = 'border-[#E1E4E8]';
+                let borderWidth = 'border-2';
+                let shadowGlow = '';
                 let hoverBorderColor = 'hover:border-[#00B894]/30';
                 let levelBg = 'bg-[#74b9ff]';
                 let barBg = 'bg-[#74b9ff]/10';
@@ -2832,6 +2998,8 @@ export default function App() {
                   progressBg = 'bg-[#fab1a0]';
                 } else {
                   borderColor = 'border-[#ff7675]';
+                  borderWidth = 'border-4';
+                  shadowGlow = 'shadow-[0_0_20px_rgba(255,118,117,0.3)]';
                   levelBg = 'bg-[#ff7675]';
                   barBg = 'bg-[#ff7675]/10';
                   progressBg = 'bg-[#ff7675]';
@@ -2855,7 +3023,7 @@ export default function App() {
                     }}
                     className={`${
                       theme === 'dark' ? 'bg-[#1E1E1E]' : 'bg-white'
-                    } rounded-3xl p-3 shadow-sm border-2 ${borderColor} flex flex-col items-center gap-2 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
+                    } rounded-3xl p-3 shadow-sm ${borderWidth} ${borderColor} ${shadowGlow} flex flex-col items-center gap-2 relative overflow-hidden group transition-all hover:shadow-xl ${hoverBorderColor} ${!canClick ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer'}`}
                   >
                   {/* Edit Button */}
                   {isTeacher && !loggedInStudentId && (
@@ -3717,6 +3885,161 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Random Picker Modal */}
+      <AnimatePresence>
+        {isPickerModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!isPicking) setIsPickerModalOpen(false);
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`w-full max-w-sm rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
+            >
+              {/* Header */}
+              <div className={`p-6 border-b flex items-center justify-between ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
+                <div className="flex items-center gap-3">
+                  <Shuffle className="w-6 h-6 text-[#6C5CE7]" />
+                  <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                    {t.randomPicker}
+                  </h2>
+                </div>
+                {!isPicking && (
+                  <button 
+                    onClick={() => setIsPickerModalOpen(false)}
+                    className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#4A5568]' : 'hover:bg-[#F1F3F5]'}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="p-8 flex flex-col items-center justify-center text-center">
+                {/* The Spinner Area */}
+                <div className={`w-full h-56 relative overflow-hidden rounded-[2.5rem] mb-8 flex items-center justify-center ${
+                    theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F8F9FA]'
+                }`}>
+                  {/* Centering Indicator */}
+                  <div className="absolute top-0 bottom-0 w-1 bg-[#6C5CE7]/30 z-20 left-1/2 -translate-x-1/2 rounded-full" />
+                  
+                  {isPicking ? (
+                    <div className="flex items-center justify-center w-full h-full">
+                       <motion.div
+                         className="flex gap-6 px-12 items-center"
+                         animate={{ x: [0, -2500] }}
+                         transition={{ 
+                           duration: 4, 
+                           repeat: Infinity, 
+                           ease: "linear" 
+                         }}
+                       >
+                         {/* Repeated students to fill the slide */}
+                         {[...students, ...students, ...students, ...students, ...students].map((s, i) => (
+                           <div key={i} className="shrink-0 flex flex-col items-center gap-2">
+                             <div className="w-20 h-20 bg-white rounded-2xl shadow-md border border-[#E1E4E8] flex items-center justify-center overflow-hidden relative">
+                                {s.equippedSpecialPet ? (
+                                  <img 
+                                    src={specialPets.find(p => p.id === s.equippedSpecialPet)?.imageUrl} 
+                                    className="w-full h-full object-cover" 
+                                    alt="" 
+                                    referrerPolicy="no-referrer" 
+                                  />
+                                ) : s.equippedPet !== null ? (
+                                  <span className="text-4xl">{getPetEmoji(s.equippedPet)}</span>
+                                ) : (
+                                  <img src={s.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                                )}
+                             </div>
+                             <p className="text-[10px] font-bold text-gray-400">{s.name}</p>
+                           </div>
+                         ))}
+                       </motion.div>
+                    </div>
+                  ) : (
+                    pickedStudent && (
+                      <motion.div 
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="flex flex-col items-center justify-center z-30"
+                      >
+                        <div className="w-28 h-28 bg-white rounded-3xl shadow-2xl border-4 border-[#6C5CE7] flex items-center justify-center overflow-hidden relative mb-4">
+                           {pickedStudent.equippedSpecialPet ? (
+                             <img 
+                               src={specialPets.find(p => p.id === pickedStudent.equippedSpecialPet)?.imageUrl} 
+                               className="w-full h-full object-cover" 
+                               alt="" 
+                               referrerPolicy="no-referrer" 
+                             />
+                           ) : pickedStudent.equippedPet !== null ? (
+                             <span className="text-6xl">
+                               {getPetEmoji(pickedStudent.equippedPet)}
+                             </span>
+                           ) : (
+                             <img src={pickedStudent.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                           )}
+
+                           <motion.div 
+                             initial={{ scale: 0 }}
+                             animate={{ scale: 1 }}
+                             transition={{ delay: 0.3 }}
+                             className="absolute -top-2 -left-2 w-10 h-10 bg-[#00B894] rounded-2xl flex items-center justify-center shadow-lg border-4 border-white z-20"
+                           >
+                             <Star className="w-5 h-5 text-white fill-current" />
+                           </motion.div>
+                        </div>
+                        <div className="text-center">
+                          <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                            {pickedStudent.name}
+                          </h3>
+                          <p className="text-[#6C5CE7] font-bold text-sm mt-1">{t.andTheWinnerIs}</p>
+                        </div>
+                      </motion.div>
+                    )
+                  )}
+                </div>
+
+                {!isPicking && pickedStudent ? (
+                  <button 
+                    onClick={() => setIsPickerModalOpen(false)}
+                    className="w-full bg-[#6C5CE7] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5849BE] transition-all shadow-lg"
+                  >
+                    {t.confirmPick}
+                  </button>
+                ) : (
+                  <button 
+                    disabled={isPicking}
+                    onClick={startRandomPick}
+                    className="w-full bg-[#6C5CE7] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#5849BE] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isPicking ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                        {t.pickingStudent}
+                      </>
+                    ) : (
+                      <>
+                        <Dices className="w-6 h-6" />
+                        {t.pickStudent}
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Power Selection Modal */}
       <AnimatePresence>
         {powerModalStudent && (
@@ -3732,12 +4055,12 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className={`w-full max-sm rounded-[2.5rem] shadow-2xl relative overflow-hidden ${
+              className={`w-full max-w-[320px] rounded-[1.5rem] shadow-2xl relative overflow-hidden ${
                 theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
               }`}
             >
-              <div className={`p-8 text-center border-b ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
-                <div className="w-20 h-20 bg-[#6C5CE7] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#6C5CE7]/20 overflow-hidden">
+              <div className={`p-4 text-center border-b ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
+                <div className="w-12 h-12 bg-[#6C5CE7] rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-[#6C5CE7]/20 overflow-hidden">
                   {powerModalStudent.equippedSpecialPet ? (
                     <img 
                       src={specialPets.find(p => p.id === powerModalStudent.equippedSpecialPet)?.imageUrl} 
@@ -3746,7 +4069,7 @@ export default function App() {
                       referrerPolicy="no-referrer" 
                     />
                   ) : powerModalStudent.equippedPet !== null ? (
-                    <span className="text-5xl">{getPetEmoji(powerModalStudent.equippedPet)}</span>
+                    <span className="text-2xl">{getPetEmoji(powerModalStudent.equippedPet)}</span>
                   ) : (
                     <img 
                       src={powerModalStudent.avatar} 
@@ -3756,28 +4079,28 @@ export default function App() {
                     />
                   )}
                 </div>
-                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : ''}`}>
+                <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : ''}`}>
                   {powerModalMode === 'pet' ? t.yourPet : t.changeAvatar}
                 </h2>
-                <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'} mt-1`}>
+                <p className={`text-[9px] font-bold ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'} mt-0.5`}>
                   {powerModalMode === 'pet' 
                     ? t.choosePetFor.replace('{name}', powerModalStudent.name) 
                     : t.chooseAvatarFor.replace('{name}', powerModalStudent.name)}
                 </p>
                 {powerModalMode === 'pet' && (
-                  <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border ${
+                  <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
                     theme === 'dark' ? 'bg-[#F1C40F]/10 border-[#F1C40F]/20' : 'bg-[#F1C40F]/10 border-[#F1C40F]/20'
                   }`}>
-                    <Coins className="w-4 h-4 text-[#F1C40F] fill-current" />
-                    <span className="text-[#F39C12] font-black">{powerModalStudent.coins || 0} {t.coins}</span>
+                    <Coins className="w-3 h-3 text-[#F1C40F] fill-current" />
+                    <span className="text-[#F39C12] font-black text-[10px]">{powerModalStudent.coins || 0} {t.coins}</span>
                   </div>
                 )}
               </div>
               
-                <div className={`p-4 border-b flex gap-4 justify-center ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
+                <div className={`p-2 border-b flex gap-2 justify-center ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
                   <button 
                     onClick={() => setPowerModalMode('avatar')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-3 py-1 rounded-lg text-[9px] font-bold transition-all ${
                         powerModalMode === 'avatar' 
                             ? 'bg-[#6C5CE7] text-white' 
                             : theme === 'dark' ? 'bg-[#353B48] text-gray-400' : 'bg-white text-[#636E72]'
@@ -3787,7 +4110,7 @@ export default function App() {
                   </button>
                   <button 
                     onClick={() => setPowerModalMode('pet')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-3 py-1 rounded-lg text-[9px] font-bold transition-all ${
                         powerModalMode === 'pet' 
                             ? 'bg-[#6C5CE7] text-white' 
                             : theme === 'dark' ? 'bg-[#353B48] text-gray-400' : 'bg-white text-[#636E72]'
@@ -3799,7 +4122,7 @@ export default function App() {
 
                 {powerModalMode === 'pet' ? (
                 <>
-                  <div className={`p-4 border-b overflow-x-auto whitespace-nowrap flex gap-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
+                  <div className={`p-2 border-b overflow-x-auto whitespace-nowrap flex gap-1 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'} scrollbar-hide`}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tier => {
                       const currentStage = Math.floor(powerModalStudent.points / 30);
                       const isLocked = tier > 1 && currentStage < tier;
@@ -3809,23 +4132,23 @@ export default function App() {
                           key={tier}
                           disabled={isLocked}
                           onClick={() => setSelectedPetTier(tier)}
-                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                          className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-all flex items-center gap-1 flex-shrink-0 ${
                             selectedPetTier === tier 
-                              ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
+                              ? 'bg-[#6C5CE7] text-white shadow-md shadow-[#6C5CE7]/20' 
                               : isLocked
                                 ? (theme === 'dark' ? 'bg-[#353B48] text-gray-600 cursor-not-allowed opacity-60' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60')
-                                : theme === 'dark' ? 'bg-[#353B48] text-gray-400 border border-[#4A5568] hover:border-[#6C5CE7]/30' : 'bg-white text-[#636E72] border border-[#E1E4E8] hover:border-[#6C5CE7]/30'
+                                : theme === 'dark' ? 'bg-[#353B48] text-gray-400 border border-[#4A5568]' : 'bg-white text-[#636E72] border border-[#E1E4E8]'
                           }`}
                         >
-                          {isLocked && <Lock className="w-3 h-3" />}
-                          {t.level} {tier}
+                          {isLocked && <Lock className="w-2 h-2" />}
+                          {tier}
                         </button>
                       );
                     })}
                   </div>
 
                   
-                  <div className="p-8 grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
+                  <div className="p-4 grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto custom-scrollbar">
                     {(() => {
                       const currentStage = Math.floor(powerModalStudent.points / 30);
                       const isTierLocked = selectedPetTier > 1 && currentStage < selectedPetTier;
