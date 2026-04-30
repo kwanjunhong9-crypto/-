@@ -21,6 +21,8 @@ export interface SpecialPet {
   imageUrl: string;
   power: number;
   tier: number;
+  requiredMedals?: number;
+  requiredLevel?: number;
   createdAt: any;
 }
 

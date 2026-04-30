@@ -42,7 +42,9 @@ import {
   ZoomOut,
   Maximize2,
   Shuffle,
-  Dices
+  Dices,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework, SpecialPet } from './types';
@@ -178,6 +180,10 @@ const TRANSLATIONS = {
     petsAndAvatar: '宠物与头像',
     customizeCharacter: '自定义你的角色',
     pet: '宠物',
+    fastCoinReward: '快速給金幣',
+    selectStudents: '選擇學生',
+    giveCoins: '給予金幣',
+    batchReward: '批量獎勵',
     avatar: '头像',
     power: '战力',
     experience: '经验',
@@ -264,7 +270,7 @@ const TRANSLATIONS = {
     openChest: '开启宝箱',
     medals: '奖章',
     chestRewards: '宝箱奖励',
-    probability: '概率',
+    probability: '机率',
     notEnoughMedals: '奖章不足',
     chestLevel: '等级',
     bossBattle: '打怪兽',
@@ -283,6 +289,9 @@ const TRANSLATIONS = {
     petPrice: '价格 (金币)',
     petPhoto: '照片网址',
     petPower: '力量数量',
+    requiredMedals: '所需奖章',
+    requiredLevel: '所需等级',
+    levelTooLow: '等级不足',
     buy: '购买',
     notEnoughCoins: '金币不足',
     alreadyOwned: '已拥有',
@@ -357,6 +366,10 @@ const TRANSLATIONS = {
     petsAndAvatar: '寵物與頭像',
     customizeCharacter: '自定義你的角色',
     pet: '寵物',
+    fastCoinReward: '快速給金幣',
+    selectStudents: '選擇學生',
+    giveCoins: '給予金幣',
+    batchReward: '批量獎勵',
     avatar: '頭像',
     power: '戰力',
     experience: '經驗',
@@ -462,6 +475,9 @@ const TRANSLATIONS = {
     petPrice: '價格 (金幣)',
     petPhoto: '寵物照片網址',
     petPower: '力量數量',
+    requiredMedals: '所需獎章',
+    requiredLevel: '所需等級',
+    levelTooLow: '等級不足',
     buy: '購買',
     notEnoughCoins: '金幣不足',
     alreadyOwned: '已擁有',
@@ -709,6 +725,10 @@ const TRANSLATIONS = {
     petsAndAvatar: 'Pets & Avatar',
     customizeCharacter: 'Customize your character',
     pet: 'Pet',
+    fastCoinReward: 'Fast Coin Reward',
+    selectStudents: 'Select Students',
+    giveCoins: 'Give Coins',
+    batchReward: 'Batch Reward',
     avatar: 'Avatar',
     power: 'Power',
     experience: 'Experience',
@@ -815,6 +835,9 @@ const TRANSLATIONS = {
     petPhoto: 'Pet Photo URL',
     petPower: 'Power Amount',
     buy: 'Buy',
+    requiredMedals: 'Required Medals',
+    requiredLevel: 'Required Level',
+    levelTooLow: 'Level Too Low',
     notEnoughCoins: 'Not enough coins',
     alreadyOwned: 'Already Owned',
     countdown: 'Countdown',
@@ -954,7 +977,9 @@ export default function App() {
     price: 0,
     imageUrl: '',
     power: 1,
-    tier: 1
+    tier: 1,
+    requiredMedals: 0,
+    requiredLevel: 1
   });
 
   const [isChestModalOpen, setIsChestModalOpen] = useState(false);
@@ -976,10 +1001,16 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isToolboxOpen, setIsToolboxOpen] = useState(false);
+  const isDraggingToolbox = useRef(false);
+  const [toolboxDirection, setToolboxDirection] = useState<'up' | 'down'>('up');
   const [timerEditMode, setTimerEditMode] = useState<'h' | 'm' | 's' | null>(null);
   const [showTimeUp, setShowTimeUp] = useState(false);
 
   const [leaderboardTab, setLeaderboardTab] = useState<'exp' | 'power'>('exp');
+  const [isFastCoinsModalOpen, setIsFastCoinsModalOpen] = useState(false);
+  const [selectedFastCoinStudentIds, setSelectedFastCoinStudentIds] = useState<string[]>([]);
+  const [fastCoinShowResult, setFastCoinShowResult] = useState(false);
+  const [fastCoinResults, setFastCoinResults] = useState<{name: string, medal: boolean, amount: number}[]>([]);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingClassName, setEditingClassName] = useState('');
 
@@ -1578,6 +1609,8 @@ export default function App() {
       imageUrl: newSpecialPet.imageUrl,
       power: Number(newSpecialPet.power),
       tier: Number(newSpecialPet.tier),
+      requiredMedals: Number(newSpecialPet.requiredMedals || 0),
+      requiredLevel: Number(newSpecialPet.requiredLevel || 1),
       createdAt: new Date().toISOString()
     };
     
@@ -1661,9 +1694,14 @@ export default function App() {
     }
 
     const currentStage = Math.floor((student.points || 0) / 30);
-    const petTier = pet.tier || pet.power;
-    if (currentStage < petTier) {
-      alert(`等級不足！需要達到 Stage ${petTier} 才能購買此寵物。`);
+    const requiredLevel = pet.requiredLevel !== undefined ? pet.requiredLevel : (pet.tier || pet.power);
+    if (currentStage < requiredLevel) {
+      alert(`${t.levelTooLow}！需要達到 Stage ${requiredLevel} 才能購買此寵物。`);
+      return;
+    }
+
+    if ((student.medals || 0) < (pet.requiredMedals || 0)) {
+      alert(`${t.notEnoughMedals}！需要 ${pet.requiredMedals} 個獎章。`);
       return;
     }
     
@@ -2582,16 +2620,77 @@ export default function App() {
     setEditingStudent(null);
   };
 
+  const handleBatchUpdateCoins = (studentIds: string[], amount: number) => {
+    let totalMedalsApplied = 0;
+    const results: {name: string, medal: boolean, amount: number}[] = [];
+    
+    const chance = Math.abs(amount) / 100;
+
+    const newStudents = students.map(s => {
+      if (studentIds.includes(s.id)) {
+        let medalChange = 0;
+        if (Math.random() < chance) {
+          medalChange = amount > 0 ? 1 : -1;
+        }
+        
+        if (medalChange > 0) totalMedalsApplied++;
+        
+        results.push({
+          name: s.name,
+          medal: medalChange > 0,
+          amount: amount
+        });
+
+        return { 
+          ...s, 
+          coins: Math.max(0, (s.coins || 0) + amount),
+          medals: Math.max(0, (s.medals || 0) + medalChange)
+        };
+      }
+      return s;
+    });
+
+    setStudents(newStudents);
+    syncStudentsToFirestore(newStudents);
+    setFastCoinResults(results);
+    setFastCoinShowResult(true);
+    
+    if (amount > 0) {
+      playSound(totalMedalsApplied > 0 ? 'power' : 'success');
+    } else {
+      playSound('error');
+    }
+  };
+
   const handleUpdateCoins = (studentId: string, amount: number) => {
+    let medalChange = 0;
+    // Probability logic: 5=5%, 10=10%, etc.
+    const chance = Math.abs(amount) / 100;
+    
+    if (Math.random() < chance) {
+      medalChange = amount > 0 ? 1 : -1;
+    }
+
     const newStudents = students.map(s => {
       if (s.id === studentId) {
-        return { ...s, coins: Math.max(0, (s.coins || 0) + amount) };
+        const currentCoins = s.coins || 0;
+        const currentMedals = s.medals || 0;
+        return { 
+          ...s, 
+          coins: Math.max(0, currentCoins + amount),
+          medals: Math.max(0, currentMedals + medalChange)
+        };
       }
       return s;
     });
     setStudents(newStudents);
     syncStudentsToFirestore(newStudents);
-    playSound('success');
+    
+    if (amount > 0) {
+      playSound(medalChange > 0 ? 'power' : 'success');
+    } else {
+      playSound('error');
+    }
   };
 
   const closeModal = () => {
@@ -2630,201 +2729,8 @@ export default function App() {
             </div>
           </div>
           
-          <div className="relative">
-            <button 
-              onClick={() => setIsToolboxOpen(!isToolboxOpen)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
-                isToolboxOpen 
-                  ? 'bg-[#6C5CE7] text-white shadow-lg shadow-[#6C5CE7]/20' 
-                  : theme === 'dark' 
-                    ? 'bg-[#2D3436] text-gray-200 border border-[#4A5568] hover:bg-[#4A5568]'
-                    : 'bg-white text-[#2D3436] border border-[#E1E4E8] hover:bg-[#F8F9FA]'
-              }`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-              <span className="hidden sm:inline">{t.toolbox}</span>
-            </button>
-
-            <AnimatePresence>
-              {isToolboxOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsToolboxOpen(false)} 
-                  />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className={`absolute top-full mt-2 right-0 sm:left-0 sm:right-auto w-64 rounded-2xl shadow-xl border py-2 z-50 overflow-hidden ${
-                        theme === 'dark' ? 'bg-[#1E1E1E] border-[#333333]' : 'bg-white border-[#E1E4E8]'
-                      }`}
-                    >
-                      {/* Login/Profile Section */}
-                      <div className="px-2 mb-2">
-                        {!isTeacher && !loggedInStudentId && (
-                          <div className={`p-3 rounded-xl border ${
-                            theme === 'dark' ? 'bg-[#2D2D2D] border-[#444444]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
-                          }`}>
-                            <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <input 
-                                  type="password"
-                                  maxLength={6}
-                                  value={studentLoginPassword}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, '');
-                                    setStudentLoginPassword(val);
-                                  }}
-                                  placeholder={t.passwordPlaceholder}
-                                  className={`w-full border rounded-lg px-2 py-1.5 text-sm font-bold text-center tracking-widest outline-none transition-colors ${
-                                    theme === 'dark' ? 'bg-[#1E1E1E] border-[#444444] focus:border-[#6C5CE7]' : 'bg-white border-[#E1E4E8] focus:border-[#6C5CE7]'
-                                  }`}
-                                />
-                              </div>
-                              <button
-                                onClick={() => handleStudentLogin(studentLoginPassword)}
-                                disabled={studentLoginPassword.length !== 6}
-                                className="bg-[#0984E3] text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-[#0773C5] disabled:opacity-50"
-                              >
-                                {t.login}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {loggedInStudentId && (
-                          <div className={`p-3 rounded-xl border flex items-center justify-between ${
-                            theme === 'dark' ? 'bg-[#00B894]/10 border-[#00B894]/20' : 'bg-[#00B894]/5 border-[#00B894]/10'
-                          }`}>
-                            <div className="flex items-center gap-2">
-                              <img 
-                                src={students.find(s => s.id === loggedInStudentId)?.avatar} 
-                                className={`w-8 h-8 rounded-lg shadow-sm ${theme === 'dark' ? 'bg-[#1E1E1E]' : 'bg-white'}`} 
-                                alt="" 
-                              />
-                              <span className={`text-sm font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>
-                                {students.find(s => s.id === loggedInStudentId)?.name}
-                              </span>
-                            </div>
-                            <button 
-                              onClick={handleStudentLogout}
-                              className="p-1.5 hover:bg-[#D63031]/10 rounded-lg text-[#D63031]"
-                            >
-                              <LogOut className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={`h-px mx-2 mb-2 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
-
-                      <button 
-                        onClick={() => { setActiveTab('classroom'); setIsToolboxOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                          activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                        }`}
-                      >
-                        <Users className="w-4 h-4" />
-                        {t.classroom}
-                      </button>
-                      
-                      {(!loggedInStudentId || isTeacher) && (
-                        <>
-                          <button 
-                            onClick={() => { setActiveTab('story'); setIsToolboxOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                            }`}
-                          >
-                            <BookOpen className="w-4 h-4" />
-                            {t.story}
-                          </button>
-                          <button 
-                            onClick={() => { setActiveTab('reports'); setIsToolboxOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                            }`}
-                          >
-                            <Award className="w-4 h-4" />
-                            {t.reports}
-                          </button>
-                          <button 
-                            onClick={() => { setActiveTab('leaderboard'); setIsToolboxOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                            }`}
-                          >
-                            <Trophy className="w-4 h-4" />
-                            {t.leaderboard}
-                          </button>
-                          <button 
-                            onClick={() => { startRandomPick(); setIsToolboxOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                              theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                            }`}
-                          >
-                            <Shuffle className="w-4 h-4 text-[#6C5CE7]" />
-                            {t.randomPicker}
-                          </button>
-                        </>
-                      )}
-
-                      <button 
-                        onClick={() => { setIsSpecialPetModalOpen(true); setIsToolboxOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                        }`}
-                      >
-                        <Heart className="w-4 h-4 text-[#F368E0]" />
-                        {t.specialPet}
-                      </button>
-
-                      {isTeacher && !loggedInStudentId && (
-                        <button 
-                          onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                            activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                          }`}
-                        >
-                          <Zap className="w-4 h-4" />
-                          {t.bossBattle}
-                        </button>
-                      )}
-
-                      <div className={`h-px mx-2 my-2 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
-
-                      {(!loggedInStudentId || isTeacher) && (
-                        <button 
-                          onClick={() => {
-                            setIsTimerModalOpen(true);
-                            setIsToolboxOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                             theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                          }`}
-                        >
-                          <Clock className="w-4 h-4 text-[#00B894]" />
-                          {t.countdown}
-                        </button>
-                      )}
-
-                      <button 
-                        onClick={() => {
-                          setIsHomeworkModalOpen(true);
-                          setIsToolboxOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                          theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
-                        }`}
-                      >
-                        <BookOpen className="w-4 h-4 text-[#6C5CE7]" />
-                        {t.homework}
-                      </button>
-                    </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+          <div>
+            {/* Toolbox moved to floating button at bottom */}
           </div>
 
           <div className="flex items-center gap-4">
@@ -4170,7 +4076,10 @@ export default function App() {
                       }
 
                       const tierPets = PETS.filter(p => p.tier === selectedPetTier);
-                      const tierSpecialPets = specialPets.filter(p => (p.tier || p.power) === selectedPetTier);
+                      const tierSpecialPets = specialPets.filter(p => {
+                        const petLevel = p.requiredLevel !== undefined ? p.requiredLevel : (p.tier || p.power);
+                        return petLevel === selectedPetTier;
+                      });
                       
                       const allTierPets = [
                         ...tierPets.map(p => ({ ...p, isSystem: true })),
@@ -4197,10 +4106,17 @@ export default function App() {
                           
                         const canAfford = (powerModalStudent.coins || 0) >= pet.price;
                         
+                        // Check additional requirements for special pets
+                        const studentMedals = powerModalStudent.medals || 0;
+                        const requiredMedals = !pet.isSystem ? (pet.requiredMedals || 0) : 0;
+                        const hasMedals = studentMedals >= requiredMedals;
+                        
+                        const isLocked = !isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford || !hasMedals);
+                        
                         return (
                           <button
                             key={pet.isSystem ? `sys-${pet.id}` : `spec-${pet.id}`}
-                            disabled={!isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford)}
+                            disabled={isLocked}
                             onClick={() => {
                               if (pet.isSystem) {
                                 handleSelectPet(powerModalStudent.id, pet.id);
@@ -4215,14 +4131,19 @@ export default function App() {
                             className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all relative group ${
                               isEquipped 
                                 ? 'bg-[#F1F3F5] ring-2 ring-[#6C5CE7]' 
-                                : !isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford)
+                                : isLocked
                                   ? 'opacity-50 grayscale cursor-not-allowed bg-gray-50' 
                                   : 'hover:bg-[#F1F3F5]'
                             }`}
                           >
-                            {!isOwned && ((pet.isSystem && pet.isSpecial) || !canAfford) && (
-                              <div className="absolute top-2 right-2">
+                            {isLocked && (
+                              <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                                 <Lock className="w-3 h-3 text-[#636E72]" />
+                                {!hasMedals && (
+                                  <div className="bg-[#D63031]/10 px-1 py-0.5 rounded text-[7px] font-black text-[#D63031]">
+                                    {requiredMedals} <Medal className="w-1.5 h-1.5 inline" />
+                                  </div>
+                                )}
                               </div>
                             )}
                             {pet.isSystem ? (
@@ -4571,24 +4492,55 @@ export default function App() {
               <div className="w-16 h-16 bg-[#F1C40F]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Coins className="w-8 h-8 text-[#F1C40F] fill-current" />
               </div>
-              <h2 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : ''}`}>獎勵金幣</h2>
-              <p className={`text-sm mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>為 {coinsModalStudent.name} 選擇獎勵金額</p>
+              <h2 className={`text-xl font-bold mb-1 ${theme === 'dark' ? 'text-white' : ''}`}>調整金幣</h2>
+              <p className={`text-[10px] mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>為 {coinsModalStudent.name} 調整金幣與獎章</p>
               
-              <div className="grid grid-cols-2 gap-3">
-                {[10, 20, 30, 50, 100].map(amount => (
-                  <button
-                    key={amount}
-                    onClick={() => {
-                      handleUpdateCoins(coinsModalStudent.id, amount);
-                      setCoinsModalStudent(null);
-                    }}
-                    className={`py-3 rounded-2xl font-black transition-all active:scale-95 border ${
-                      theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568] text-white hover:bg-[#F1C40F]/10 hover:text-[#F39C12] hover:border-[#F1C40F]/30' : 'bg-[#F8F9FA] border-[#E1E4E8] hover:bg-[#F1C40F]/10 hover:text-[#F39C12] hover:border-[#F1C40F]/30'
-                    }`}
-                  >
-                    +{amount}
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[9px] font-black text-[#00B894] uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
+                    <TrendingUp className="w-2.5 h-2.5" /> 加分 (機率獲得獎章)
+                  </p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[5, 10, 15, 20, 25].map(amount => (
+                      <button
+                        key={`add-${amount}`}
+                        onClick={() => {
+                          handleUpdateCoins(coinsModalStudent.id, amount);
+                          setCoinsModalStudent(null);
+                        }}
+                        className={`py-1.5 px-0 rounded-lg transition-all border border-[#00B894]/20 hover:border-[#00B894] hover:bg-[#00B894]/5 flex flex-col items-center justify-center ${
+                          theme === 'dark' ? 'text-[#00B894]' : 'text-[#00B894]'
+                        }`}
+                      >
+                        <span className="font-black text-[10px]">+{amount}</span>
+                        <span className="text-[8px] opacity-70">+{amount}%</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-black text-[#FF7675] uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
+                    <TrendingDown className="w-2.5 h-2.5" /> 扣分 (機率扣除獎章)
+                  </p>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[5, 10, 15, 20, 25].map(amount => (
+                      <button
+                        key={`sub-${amount}`}
+                        onClick={() => {
+                          handleUpdateCoins(coinsModalStudent.id, -amount);
+                          setCoinsModalStudent(null);
+                        }}
+                        className={`py-1.5 px-0 rounded-lg transition-all border border-[#FF7675]/20 hover:border-[#FF7675] hover:bg-[#FF7675]/5 flex flex-col items-center justify-center ${
+                          theme === 'dark' ? 'text-[#FF7675]' : 'text-[#FF7675]'
+                        }`}
+                      >
+                        <span className="font-black text-[10px]">-{amount}</span>
+                        <span className="text-[8px] opacity-70">-{amount}%</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               
               <button 
@@ -5428,6 +5380,31 @@ export default function App() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.requiredMedals}</label>
+                        <input 
+                          type="number"
+                          value={newSpecialPet.requiredMedals}
+                          onChange={(e) => setNewSpecialPet({...newSpecialPet, requiredMedals: Math.max(0, parseInt(e.target.value) || 0)})}
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.requiredLevel}</label>
+                        <input 
+                          type="number"
+                          value={newSpecialPet.requiredLevel}
+                          onChange={(e) => setNewSpecialPet({...newSpecialPet, requiredLevel: Math.max(1, parseInt(e.target.value) || 1)})}
+                          className={`w-full rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#F368E0] transition-all ${
+                            theme === 'dark' ? 'bg-[#2D3436] text-white' : 'bg-[#F1F3F5]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
                     <div className="mt-4">
                       <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>出現等級 (Stage/Tier)</label>
                       <div className="flex gap-2 mb-2">
@@ -5505,11 +5482,26 @@ export default function App() {
                     {specialPets.map((pet) => {
                       const student = students.find(s => s.id === loggedInStudentId);
                       const isOwned = student?.ownedSpecialPets?.includes(pet.id);
+                      const currentStage = student ? Math.floor((student.points || 0) / 30) : 0;
+                      const requiredLevel = pet.requiredLevel !== undefined ? pet.requiredLevel : (pet.tier || pet.power);
+                      const requiredMedals = pet.requiredMedals || 0;
+                      const hasLevel = currentStage >= requiredLevel;
+                      const hasMedals = (student?.medals || 0) >= requiredMedals;
+                      const canBuy = hasLevel && hasMedals;
                       
                       return (
                         <div key={pet.id} className={`rounded-[2.5rem] p-6 border-2 flex flex-col items-center gap-4 relative ${
                           theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'
                         }`}>
+                          {(!canBuy && !isTeacher && loggedInStudentId) && (
+                            <div className="absolute inset-0 bg-black/60 rounded-[2.5rem] flex flex-col items-center justify-center z-10 p-4">
+                              <XCircle className="w-12 h-12 text-[#D63031] mb-2" />
+                              <span className="text-white font-black text-sm">{t.levelTooLow}</span>
+                              {!hasLevel && <span className="text-white/60 text-[10px] font-bold">Stage {requiredLevel} Required</span>}
+                              {!hasMedals && <span className="text-white/60 text-[10px] font-bold">{requiredMedals} Medals Required</span>}
+                            </div>
+                          )}
+
                           {isTeacher && !loggedInStudentId && (
                             <button 
                               onClick={async () => {
@@ -5622,6 +5614,437 @@ export default function App() {
               滾動或點擊按鈕來縮放圖片
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Floating Draggable Toolbox */}
+      <div className="fixed bottom-6 right-6 z-[100] pointer-events-none">
+        <motion.div
+          drag
+          dragMomentum={false}
+          onDragStart={() => {
+            isDraggingToolbox.current = true;
+          }}
+          onDragEnd={() => {
+            // Short timeout to ensure click handler doesn't fire immediately after drag
+            setTimeout(() => {
+              isDraggingToolbox.current = false;
+            }, 100);
+          }}
+          className="pointer-events-auto relative"
+          style={{ cursor: 'grab' }}
+          whileDrag={{ cursor: 'grabbing', scale: 1.1 }}
+        >
+          <button 
+            onClick={(e) => {
+              if (isDraggingToolbox.current) return;
+              
+              const rect = e.currentTarget.getBoundingClientRect();
+              const isTopHalf = rect.top < window.innerHeight / 2;
+              setToolboxDirection(isTopHalf ? 'down' : 'up');
+              setIsToolboxOpen(!isToolboxOpen);
+            }}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all outline-none ${
+              isToolboxOpen 
+                ? 'bg-[#6C5CE7] text-white scale-110' 
+                : theme === 'dark' 
+                  ? 'bg-[#2D3436] text-gray-200 border-2 border-[#4A5568] hover:border-[#6C5CE7]'
+                  : 'bg-white text-[#2D3436] border-2 border-[#E1E4E8] hover:border-[#6C5CE7]'
+            }`}
+          >
+            <LayoutGrid className="w-7 h-7" />
+          </button>
+
+          <AnimatePresence>
+            {isToolboxOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40 bg-transparent pointer-events-auto" 
+                  onClick={(e) => {
+                    if (isDraggingToolbox.current) return;
+                    setIsToolboxOpen(false);
+                  }} 
+                />
+                <motion.div 
+                  initial={{ 
+                    opacity: 0, 
+                    y: toolboxDirection === 'up' ? -20 : 20, 
+                    scale: 0.95 
+                  }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: toolboxDirection === 'up' ? -10 : 10, 
+                    scale: 1 
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    y: toolboxDirection === 'up' ? -20 : 20, 
+                    scale: 0.95 
+                  }}
+                  className={`absolute ${toolboxDirection === 'up' ? 'bottom-full mb-4' : 'top-full mt-4'} right-0 w-64 rounded-[2rem] shadow-2xl border z-50 overflow-hidden ${
+                    theme === 'dark' ? 'bg-[#1E1E1E] border-[#333333]' : 'bg-white border-[#E1E4E8]'
+                  }`}
+                >
+                  <div className="max-h-[70vh] overflow-y-auto custom-scrollbar pt-4 pb-2">
+                    {/* Login/Profile Section */}
+                    <div className="px-3 mb-3">
+                      {!isTeacher && !loggedInStudentId && (
+                        <div className={`p-4 rounded-2xl border ${
+                          theme === 'dark' ? 'bg-[#2D2D2D] border-[#444444]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                        }`}>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <input 
+                                type="password"
+                                maxLength={6}
+                                value={studentLoginPassword}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  setStudentLoginPassword(val);
+                                }}
+                                placeholder={t.passwordPlaceholder}
+                                className={`w-full border rounded-xl px-2 py-2 text-sm font-bold text-center tracking-widest outline-none transition-colors ${
+                                  theme === 'dark' ? 'bg-[#1E1E1E] border-[#444444] focus:border-[#6C5CE7]' : 'bg-white border-[#E1E4E8] focus:border-[#6C5CE7]'
+                                }`}
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleStudentLogin(studentLoginPassword)}
+                              disabled={studentLoginPassword.length !== 6}
+                              className="bg-[#0984E3] text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-[#0773C5] disabled:opacity-50"
+                            >
+                              {t.login}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {loggedInStudentId && (
+                        <div className={`p-4 rounded-2xl border flex items-center justify-between ${
+                          theme === 'dark' ? 'bg-[#00B894]/10 border-[#00B894]/20' : 'bg-[#00B894]/5 border-[#00B894]/10'
+                        }`}>
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={students.find(s => s.id === loggedInStudentId)?.avatar} 
+                              className={`w-10 h-10 rounded-xl shadow-sm ${theme === 'dark' ? 'bg-[#1E1E1E]' : 'bg-white'}`} 
+                              alt="" 
+                            />
+                            <span className={`text-sm font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>
+                              {students.find(s => s.id === loggedInStudentId)?.name}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={handleStudentLogout}
+                            className="p-2 hover:bg-[#D63031]/10 rounded-xl text-[#D63031]"
+                          >
+                            <LogOut className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={`h-px mx-4 mb-3 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
+
+                    {isTeacher && (
+                      <button 
+                         onClick={() => { setIsFastCoinsModalOpen(true); setIsToolboxOpen(false); }}
+                         className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                         }`}
+                      >
+                        <Coins className="w-5 h-5 text-[#F1C40F]" />
+                        <span className="flex-1 text-left">{t.fastCoinReward}</span>
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => { setActiveTab('classroom'); setIsToolboxOpen(false); }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                        activeTab === 'classroom' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <Users className="w-5 h-5" />
+                      <span className="flex-1 text-left">{t.classroom}</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => { setActiveTab('story'); setIsToolboxOpen(false); }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                        activeTab === 'story' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      <span className="flex-1 text-left">{t.story}</span>
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('reports'); setIsToolboxOpen(false); }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                        activeTab === 'reports' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <Award className="w-5 h-5" />
+                      <span className="flex-1 text-left">{t.reports}</span>
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('leaderboard'); setIsToolboxOpen(false); }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                        activeTab === 'leaderboard' ? 'bg-[#00B894]/10 text-[#00B894]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <Trophy className="w-5 h-5" />
+                      <span className="flex-1 text-left">{t.leaderboard}</span>
+                    </button>
+                    {isTeacher && (
+                      <button 
+                        onClick={() => { startRandomPick(); setIsToolboxOpen(false); }}
+                        className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                          theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
+                      >
+                        <Shuffle className="w-5 h-5 text-[#6C5CE7]" />
+                        <span className="flex-1 text-left">{t.randomPicker}</span>
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => { setIsSpecialPetModalOpen(true); setIsToolboxOpen(false); }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                         theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <Heart className="w-5 h-5 text-[#F368E0]" />
+                      <span className="flex-1 text-left">{t.specialPet}</span>
+                    </button>
+
+                    {isTeacher && !loggedInStudentId && (
+                      <button 
+                        onClick={() => { setActiveTab('boss'); setIsToolboxOpen(false); }}
+                        className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                          activeTab === 'boss' ? 'bg-[#6C5CE7]/10 text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
+                      >
+                        <Zap className="w-5 h-5" />
+                        <span className="flex-1 text-left">{t.bossBattle}</span>
+                      </button>
+                    )}
+
+                    <div className={`h-px mx-4 my-3 ${theme === 'dark' ? 'bg-[#4A5568]' : 'bg-[#E1E4E8]'}`} />
+
+                    {(!loggedInStudentId || isTeacher) && (
+                      <button 
+                        onClick={() => {
+                          setIsTimerModalOpen(true);
+                          setIsToolboxOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                           theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                        }`}
+                      >
+                        <Clock className="w-5 h-5 text-[#00B894]" />
+                        <span className="flex-1 text-left">{t.countdown}</span>
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => {
+                        setIsHomeworkModalOpen(true);
+                        setIsToolboxOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors ${
+                        theme === 'dark' ? 'text-gray-400 hover:bg-[#2D3436]' : 'text-[#636E72] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <BookOpen className="w-5 h-5 text-[#6C5CE7]" />
+                      <span className="flex-1 text-left">{t.homework}</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+
+      {/* Fast Coins Modal */}
+      <AnimatePresence>
+        {isFastCoinsModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => {
+                if (!fastCoinShowResult) {
+                  setIsFastCoinsModalOpen(false);
+                  setSelectedFastCoinStudentIds([]);
+                }
+              }}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`w-full max-w-2xl rounded-[2rem] shadow-2xl relative overflow-hidden ${
+                theme === 'dark' ? 'bg-[#353B48]' : 'bg-white'
+              }`}
+            >
+              {!fastCoinShowResult ? (
+                <>
+                  <div className={`p-6 border-b flex items-center justify-between ${theme === 'dark' ? 'border-[#4A5568]' : 'border-[#F1F3F5]'}`}>
+                    <div>
+                      <h2 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : ''}`}>{t.fastCoinReward}</h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                          theme === 'dark' ? 'bg-[#6C5CE7]/20 text-[#a29bfe]' : 'bg-[#6C5CE7]/10 text-[#6C5CE7]'
+                        }`}>
+                          {className}
+                        </span>
+                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
+                          {selectedFastCoinStudentIds.length} {t.selectStudents}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          if (selectedFastCoinStudentIds.length === students.length) {
+                            setSelectedFastCoinStudentIds([]);
+                          } else {
+                            setSelectedFastCoinStudentIds(students.map(s => s.id));
+                          }
+                        }}
+                        className={`text-xs font-black px-3 py-1.5 rounded-lg transition-all ${
+                          theme === 'dark' 
+                            ? 'bg-[#2D2D2D] text-gray-300 hover:bg-[#3D3D3D]' 
+                            : 'bg-[#F1F3F5] text-[#636E72] hover:bg-[#E9ECEF]'
+                        }`}
+                      >
+                        {selectedFastCoinStudentIds.length === students.length ? '取消全選' : '全選'}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setIsFastCoinsModalOpen(false);
+                          setSelectedFastCoinStudentIds([]);
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {students.map(student => {
+                        const isSelected = selectedFastCoinStudentIds.includes(student.id);
+                        return (
+                          <button
+                            key={student.id}
+                            onClick={() => {
+                              setSelectedFastCoinStudentIds(prev => 
+                                isSelected ? prev.filter(id => id !== student.id) : [...prev, student.id]
+                              );
+                            }}
+                            className={`flex flex-col items-center gap-2 p-2 rounded-2xl transition-all ${
+                              isSelected 
+                                ? 'bg-[#6C5CE7]/10 ring-2 ring-[#6C5CE7]' 
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                              <img src={student.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                            </div>
+                            <span className={`text-[10px] font-bold truncate w-full text-center ${isSelected ? 'text-[#6C5CE7]' : theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {student.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className={`p-6 border-t ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#F1F3F5]'}`}>
+                    <div className="flex flex-wrap justify-center gap-2 mb-4">
+                      {[5, 10, 15, 20, 25].map(amount => (
+                        <button
+                          key={amount}
+                          disabled={selectedFastCoinStudentIds.length === 0}
+                          onClick={() => handleBatchUpdateCoins(selectedFastCoinStudentIds, amount)}
+                          className={`px-4 py-2 rounded-xl flex flex-col items-center transition-all active:scale-95 border ${
+                            selectedFastCoinStudentIds.length === 0
+                              ? 'opacity-50 cursor-not-allowed grayscale'
+                              : 'border-[#00B894]/20 hover:border-[#00B894] hover:bg-[#00B894]/5'
+                          } ${theme === 'dark' ? 'text-[#00B894]' : 'text-[#00B894]'}`}
+                        >
+                          <span className="font-black text-sm">+{amount}</span>
+                          <span className="text-[10px] opacity-70">+{amount}%</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                       {[5, 10, 15, 20, 25].map(amount => (
+                        <button
+                          key={`sub-${amount}`}
+                          disabled={selectedFastCoinStudentIds.length === 0}
+                          onClick={() => handleBatchUpdateCoins(selectedFastCoinStudentIds, -amount)}
+                          className={`px-4 py-2 rounded-xl flex flex-col items-center transition-all active:scale-95 border ${
+                            selectedFastCoinStudentIds.length === 0
+                              ? 'opacity-50 cursor-not-allowed grayscale'
+                              : 'border-[#FF7675]/20 hover:border-[#FF7675] hover:bg-[#FF7675]/5'
+                          } ${theme === 'dark' ? 'text-[#FF7675]' : 'text-[#FF7675]'}`}
+                        >
+                          <span className="font-black text-sm">-{amount}</span>
+                          <span className="text-[10px] opacity-70">-{amount}%</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-8 text-center">
+                  <div className="w-20 h-20 bg-[#F1C40F]/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <Coins className="w-10 h-10 text-[#F1C40F] fill-current" />
+                  </div>
+                  <h2 className={`text-2xl font-black mb-2 ${theme === 'dark' ? 'text-white' : ''}`}>
+                    {fastCoinResults.some(r => r.medal) ? t.congratulations : t.giveCoins}
+                  </h2>
+                  <p className={`text-sm mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
+                    已為 {fastCoinResults.length} 位學生調整金幣
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8 max-h-[30vh] overflow-y-auto p-2">
+                    {fastCoinResults.map((res, i) => (
+                      <div key={i} className={`p-3 rounded-2xl border flex items-center justify-between ${
+                        res.medal 
+                          ? 'bg-[#F1C40F]/10 border-[#F1C40F]/30' 
+                          : theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                      }`}>
+                        <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{res.name}</span>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-xs font-black ${res.amount > 0 ? 'text-[#00B894]' : 'text-[#FF7675]'}`}>
+                            {res.amount > 0 ? '+' : ''}{res.amount}
+                          </span>
+                          {res.medal && <Star className="w-3 h-3 text-[#F1C40F] fill-current" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setIsFastCoinsModalOpen(false);
+                      setFastCoinShowResult(false);
+                      setSelectedFastCoinStudentIds([]);
+                      setFastCoinResults([]);
+                    }}
+                    className="w-full py-4 bg-[#6C5CE7] text-white rounded-2xl font-black text-lg hover:bg-[#5D4ED1] transition-all shadow-xl shadow-[#6C5CE7]/20"
+                  >
+                    OK
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
