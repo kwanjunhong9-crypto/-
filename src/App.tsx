@@ -44,7 +44,9 @@ import {
   Shuffle,
   Dices,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Bomb,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Student, StoryPost, Skill, Homework, SpecialPet } from './types';
@@ -995,6 +997,18 @@ export default function App() {
   const [criticalUsed, setCriticalUsed] = useState<Record<string, boolean>>({});
   const [selectedCombatStudents, setSelectedCombatStudents] = useState<Set<string>>(new Set());
   const [bossCombatStarted, setBossCombatStarted] = useState(false);
+  const [studentHearts, setStudentHearts] = useState<Record<string, number>>({});
+  const [bossAnger, setBossAnger] = useState(0);
+  const [bossHitsCount, setBossHitsCount] = useState(0);
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
+  const [bossAnnouncement, setBossAnnouncement] = useState<{
+    type: 'counter' | 'bomb' | 'normal' | 'pick';
+    title: string;
+    message: string;
+    studentId?: string;
+  } | null>(null);
+
+  const [isCounterSelectOpen, setIsCounterSelectOpen] = useState(false);
 
   // Timer & Toolbox State
   const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
@@ -2351,6 +2365,18 @@ export default function App() {
     setIsBossDefeated(false);
     setBossCombatStarted(false);
     setSelectedCombatStudents(new Set(students.map(s => s.id)));
+    
+    // Initialize heart and anger states
+    const heartsInit: Record<string, number> = {};
+    students.forEach(s => {
+      heartsInit[s.id] = 3;
+    });
+    setStudentHearts(heartsInit);
+    setBossAnger(0);
+    setBossHitsCount(0);
+    setIsScreenShaking(false);
+    setBossAnnouncement(null);
+
     playSound('power');
   };
 
@@ -2358,7 +2384,140 @@ export default function App() {
     setBossHp(customBossHp);
     setMaxBossHp(customBossHp);
     setBossCombatStarted(true);
+    
+    // Initialize heart and anger states on combat confirm as well
+    const heartsInit: Record<string, number> = {};
+    students.forEach(s => {
+      heartsInit[s.id] = 3;
+    });
+    setStudentHearts(heartsInit);
+    setBossAnger(0);
+    setBossHitsCount(0);
+    setIsScreenShaking(false);
+    setBossAnnouncement(null);
+
     playSound('power');
+  };
+
+  const increaseAnger = (percent: number) => {
+    if (isBossDefeated || bossHp <= 0) return;
+    setBossAnger(prev => {
+      const next = prev + percent;
+      if (next >= 100) {
+        triggerBombExplosion();
+        return 100;
+      }
+      return next;
+    });
+  };
+
+  const checkAllHeartsDepleted = (nextHearts: Record<string, number>) => {
+    const combatIds = [...selectedCombatStudents] as string[];
+    if (combatIds.length === 0) return false;
+    
+    const allDepleted = combatIds.every(id => {
+      const hearts = nextHearts[id] !== undefined ? nextHearts[id] : 3;
+      return hearts <= 0;
+    });
+
+    if (allDepleted) {
+      setIsBossDefeated(true);
+      distributeBossRewards(damageDealt);
+      playSound('error');
+      setBossAnnouncement({
+        type: 'normal',
+        title: '💀 全班力竭！戰鬥結束 💀',
+        message: '全班所有參戰學生的愛心已全部耗盡，戰鬥直接結束！獎勵將依據目前傷害結算（已扣除愛心耗盡懲罰）。'
+      });
+      return true;
+    }
+    return false;
+  };
+
+  const deductStudentHeart = (studentId: string) => {
+    setStudentHearts(prev => {
+      const next = { ...prev };
+      const current = next[studentId] !== undefined ? next[studentId] : 3;
+      next[studentId] = Math.max(0, current - 1);
+      
+      setTimeout(() => {
+        checkAllHeartsDepleted(next);
+      }, 0);
+
+      return next;
+    });
+  };
+
+  const triggerBombExplosion = () => {
+    // Play emergency siren
+    const alarm = new Audio('https://assets.mixkit.co/active_storage/sfx/991/991-preview.mp3');
+    alarm.volume = 0.5;
+    alarm.play().catch(e => console.log('Alarm sound failed:', e));
+
+    setIsScreenShaking(true);
+    
+    // 4 seconds of alarm and shaking
+    setTimeout(() => {
+      setIsScreenShaking(false);
+      
+      // Deduct 1 heart from all students in the class
+      setStudentHearts(prev => {
+        const next = { ...prev };
+        students.forEach(s => {
+          const current = next[s.id] !== undefined ? next[s.id] : 3;
+          next[s.id] = Math.max(0, current - 1);
+        });
+
+        setTimeout(() => {
+          const wasDepleted = checkAllHeartsDepleted(next);
+          if (!wasDepleted) {
+            setBossAnnouncement({
+              type: 'bomb',
+              title: '💣 憤怒爆表！炸彈引爆！',
+              message: '憤怒值達到 100%，炸彈已被引爆！全班所有學生已被扣除 1 顆愛心！'
+            });
+          }
+        }, 0);
+
+        return next;
+      });
+
+      // Reset anger
+      setBossAnger(0);
+    }, 4000);
+  };
+
+  const triggerCounterAttack = () => {
+    if (isBossDefeated || bossHp <= 0) return;
+    
+    const combatIds = [...selectedCombatStudents] as string[];
+    if (combatIds.length === 0) return;
+
+    // Filter students with hearts > 0
+    const activeCombatIds = combatIds.filter(id => (studentHearts[id] !== undefined ? studentHearts[id] : 3) > 0);
+    const targetPool = activeCombatIds.length > 0 ? activeCombatIds : combatIds;
+    const randomId = targetPool[Math.floor(Math.random() * targetPool.length)];
+    
+    deductStudentHeart(randomId);
+    playSound('error');
+  };
+
+  const triggerPureRandomPick = () => {
+    const combatIds = [...selectedCombatStudents] as string[];
+    if (combatIds.length === 0) return;
+
+    const randomId = combatIds[Math.floor(Math.random() * combatIds.length)];
+    const targetStudent = students.find(s => s.id === randomId);
+
+    if (targetStudent) {
+      playSound('success');
+      setBossAnnouncement({
+        type: 'pick',
+        title: '🎯 老師隨機抽人',
+        message: `選中了學生：${targetStudent.name}！`,
+        studentId: randomId
+      });
+    }
   };
 
   const toggleStudentCombatSelection = (studentId: string) => {
@@ -2378,6 +2537,14 @@ export default function App() {
     if (!selectedCombatStudents.has(student.id)) return;
     if (isCritical && criticalUsed[student.id]) return;
 
+    // Check student hearts
+    const hearts = studentHearts[student.id] !== undefined ? studentHearts[student.id] : 3;
+    if (hearts <= 0) {
+      playSound('error');
+      alert('愛心已耗盡！無法進行打擊。');
+      return;
+    }
+
     let power = getPetPower(student);
     if (power <= 0) {
       playSound('error');
@@ -2396,6 +2563,21 @@ export default function App() {
     const newHp = Math.max(0, bossHp - power);
     setBossHp(newHp);
     
+    // Increment hits count. On 2 hits, reset count and trigger counter-attack.
+    setBossHitsCount(prev => {
+      const next = prev + 1;
+      if (next >= 2) {
+        setTimeout(() => {
+          triggerCounterAttack();
+        }, 600);
+        return 0;
+      }
+      return next;
+    });
+
+    // Each hit adds 5% anger
+    increaseAnger(5);
+
     // 使用函数式更新确保连续点击时数据准确
     setDamageDealt(prev => ({
       ...prev,
@@ -2432,10 +2614,26 @@ export default function App() {
       let medalReward = 0;
       let coinReward = 0;
 
-      if (rankIndex === 0) medalReward = 3;
-      else if (rankIndex === 1) medalReward = 2;
-      else if (rankIndex === 2) medalReward = 1;
-      else if (finalDamage[s.id] > 0) coinReward = 50;
+      // Base distribution:
+      if (rankIndex === 0 && (finalDamage[s.id] || 0) > 0) medalReward = 3;
+      else if (rankIndex === 1 && (finalDamage[s.id] || 0) > 0) medalReward = 2;
+      else if (rankIndex === 2 && (finalDamage[s.id] || 0) > 0) medalReward = 1;
+      else if ((finalDamage[s.id] || 0) > 0) coinReward = 50;
+      else {
+        // Students who did not hit the monster (non-attackers) get half of 50 = 25 coins baseline
+        coinReward = 25;
+      }
+
+      // Halving check:
+      const hearts = studentHearts[s.id] !== undefined ? studentHearts[s.id] : 3;
+      const isHeartsDepleted = hearts <= 0;
+      const didNotHit = !finalDamage[s.id] || finalDamage[s.id] <= 0;
+
+      // If either hearts are depleted or did not hit (halved reward), apply penalty
+      if (isHeartsDepleted || didNotHit) {
+        medalReward = Math.floor(medalReward / 2);
+        coinReward = Math.floor(coinReward / 2);
+      }
 
       if (medalReward > 0 || coinReward > 0) {
         return {
@@ -3427,172 +3625,460 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-8">
-                <div className={`rounded-[3rem] p-8 shadow-sm border text-center relative overflow-hidden ${
-                  theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
-                }`}>
-                  {isBossDefeated && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className={`absolute inset-0 z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar backdrop-blur-md ${
-                        theme === 'dark' ? 'bg-[#2D3436]/95' : 'bg-white/95'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center py-8 w-full max-w-md">
-                        <Trophy className="w-20 h-20 text-[#F1C40F] mb-4 shrink-0" />
-                        <h2 className={`text-4xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.victory}</h2>
-                        <p className={`font-bold mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.rewards}</p>
+                <style>{`
+                  @keyframes shake {
+                    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                    10% { transform: translate(-4px, -4px) rotate(-1.5deg); }
+                    20% { transform: translate(-4px, 0px) rotate(1.5deg); }
+                    30% { transform: translate(0px, -3px) rotate(0deg); }
+                    40% { transform: translate(4px, 4px) rotate(1.5deg); }
+                    50% { transform: translate(3px, -4px) rotate(-1.5deg); }
+                    60% { transform: translate(-3px, 4px) rotate(0deg); }
+                    70% { transform: translate(4px, -4px) rotate(1.5deg); }
+                    80% { transform: translate(-2px, 3px) rotate(-1deg); }
+                    90% { transform: translate(4px, -3px) rotate(1.5deg); }
+                  }
+                  .animate-shake {
+                    animation: shake 0.1s infinite;
+                  }
+                `}</style>
+
+                {/* Announcement overlay modal */}
+                <AnimatePresence>
+                  {bossAnnouncement && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className={`w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl border ${
+                          theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                        }`}
+                      >
+                        <div className="text-5xl mb-4">
+                          {bossAnnouncement.type === 'counter' && '👹'}
+                          {bossAnnouncement.type === 'bomb' && '💥'}
+                          {bossAnnouncement.type === 'pick' && '🎯'}
+                          {bossAnnouncement.type === 'normal' && '📢'}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-3 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                          {bossAnnouncement.title}
+                        </h3>
+                        <p className={`font-bold mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-[#636E72]'}`}>
+                          {bossAnnouncement.message}
+                        </p>
+                        {bossAnnouncement.studentId && (
+                          <div className="flex flex-col items-center gap-2 mb-6">
+                            <div className={`w-16 h-16 rounded-2xl overflow-hidden shadow-md flex items-center justify-center bg-[#F1F3F5]`}>
+                              {(() => {
+                                const s = students.find(st => st.id === bossAnnouncement.studentId);
+                                if (!s) return null;
+                                return s.equippedSpecialPet ? (
+                                  <img src={specialPets.find(p => p.id === s.equippedSpecialPet)?.imageUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                                ) : s.equippedPet !== null ? (
+                                  <span className="text-3xl">{getPetEmoji(s.equippedPet)}</span>
+                                ) : (
+                                  <img src={s.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                                );
+                              })()}
+                            </div>
+                            <span className={`text-base font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                              {students.find(st => st.id === bossAnnouncement.studentId)?.name}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setBossAnnouncement(null)}
+                          className="w-full py-3 rounded-2xl bg-[#6C5CE7] hover:bg-[#5B4BC5] text-white font-black text-sm transition-all shadow-md shadow-[#6C5CE7]/20"
+                        >
+                          確 定
+                        </button>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
+
+                {/* Counter-Attack Student Selector Modal */}
+                <AnimatePresence>
+                  {isCounterSelectOpen && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className={`w-full max-w-lg rounded-[2.5rem] p-8 text-center shadow-2xl border flex flex-col max-h-[80vh] ${
+                          theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                            👹 選擇被反擊的學生
+                          </h3>
+                          <button
+                            onClick={() => setIsCounterSelectOpen(false)}
+                            className={`p-2 rounded-full hover:bg-black/5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <p className={`font-bold mb-4 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-[#636E72]'}`}>
+                          請選擇下方其中一位參戰學生，扣除其 1 顆愛心：
+                        </p>
                         
-                        <div className="w-full space-y-3 mb-8">
-                          {Object.entries(damageDealt)
-                            .sort((a, b) => (b[1] as number) - (a[1] as number))
-                            .map(([id, damage], index) => {
-                              const student = students.find(s => s.id === id);
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto p-2 custom-scrollbar flex-1 mb-6">
+                          {students
+                            .filter(student => selectedCombatStudents.has(student.id))
+                            .map(student => {
+                              const hearts = studentHearts[student.id] !== undefined ? studentHearts[student.id] : 3;
+                              const isDead = hearts <= 0;
                               return (
-                                <div key={id} className={`flex items-center justify-between p-4 rounded-2xl border ${
-                                  theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
-                                }`}>
-                                  <div className="flex items-center gap-3">
-                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white ${
-                                      index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#DFE6E9] text-[#636E72]'
-                                    }`}>
-                                      {index + 1}
-                                    </span>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-white'}`}>
-                                      {student?.equippedSpecialPet ? (
-                                        <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                      ) : student?.equippedPet !== null ? (
-                                        <span className="text-xl">
-                                          {getPetEmoji(student?.equippedPet)}
-                                        </span>
-                                      ) : (
-                                        <img src={student?.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                      )}
-                                    </div>
-                                    <span className={`font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{student?.name}</span>
+                                <button
+                                  key={student.id}
+                                  onClick={() => {
+                                    if (isDead) return;
+                                    deductStudentHeart(student.id);
+                                    setIsCounterSelectOpen(false);
+                                  }}
+                                  disabled={isDead}
+                                  className={`group relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 border-2 transition-all ${
+                                    isDead
+                                      ? 'opacity-30 grayscale cursor-not-allowed border-transparent bg-transparent'
+                                      : 'hover:scale-105 active:scale-95 border-red-500/10 hover:border-red-500 bg-red-500/5'
+                                  }`}
+                                >
+                                  <div className={`w-11 h-11 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-[#F1F3F5]`}>
+                                    {student.equippedSpecialPet ? (
+                                      <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                                    ) : student.equippedPet !== null ? (
+                                      <span className="text-xl">{getPetEmoji(student.equippedPet)}</span>
+                                    ) : (
+                                      <img src={student.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                                    )}
                                   </div>
-                                  <div className="flex items-center gap-4">
-                                    <span className="text-xs font-black text-[#636E72]">{damage} DMG</span>
-                                    <div className="flex gap-1">
-                                      {index === 0 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>3</div>}
-                                      {index === 1 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>2</div>}
-                                      {index === 2 && <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm"><Medal className="w-4 h-4 fill-current"/>1</div>}
-                                      {index > 2 && <div className="flex items-center gap-1 text-[#F39C12] font-black text-sm"><Coins className="w-4 h-4 fill-current"/>50</div>}
-                                    </div>
+                                  <span className={`text-[11px] font-black truncate w-full ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                                    {student.name}
+                                  </span>
+                                  <div className="flex gap-0.5 justify-center mt-0.5">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                      <Heart 
+                                        key={i} 
+                                        className={`w-3 h-3 ${
+                                          i < hearts 
+                                            ? 'fill-[#E74C3C] text-[#E74C3C]' 
+                                            : 'text-gray-300'
+                                        }`} 
+                                      />
+                                    ))}
                                   </div>
-                                </div>
+                                </button>
                               );
                             })}
                         </div>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
 
-                        <button 
-                          onClick={() => setBossDifficulty(null)}
-                          className="bg-[#6C5CE7] text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-[#6C5CE7]/20 hover:scale-105 transition-transform shrink-0"
-                        >
-                          {t.save}
-                        </button>
-                      </div>
-                    </motion.div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                  {/* Left Column: Teacher Panel */}
+                  {isTeacher && !loggedInStudentId && (
+                    <div className={`md:col-span-1 rounded-[2.5rem] p-6 border shadow-sm flex flex-col gap-4 self-start ${
+                      theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                    }`}>
+                      <h3 className={`text-base font-black pb-2 border-b uppercase tracking-wider ${theme === 'dark' ? 'text-white border-[#4A5568]' : 'text-[#2D3436] border-[#E1E4E8]'}`}>
+                        🛠️ 老師控制台
+                      </h3>
+                      
+                      <button
+                        onClick={triggerPureRandomPick}
+                        disabled={isBossDefeated || bossHp <= 0}
+                        className="w-full py-4 px-3 rounded-2xl bg-[#0984E3] hover:bg-[#0984E3]/90 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Shuffle className="w-4 h-4" />
+                        抽人
+                      </button>
+ 
+                      <button
+                        onClick={() => setIsCounterSelectOpen(true)}
+                        disabled={isBossDefeated || bossHp <= 0}
+                        className="w-full py-4 px-3 rounded-2xl bg-[#E74C3C] hover:bg-[#E74C3C]/90 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Zap className="w-4 h-4" />
+                        怪獸反擊 (扣愛心)
+                      </button>
+ 
+                      <button
+                        onClick={triggerBombExplosion}
+                        disabled={isBossDefeated || bossHp <= 0}
+                        className="w-full py-4 px-3 rounded-2xl bg-[#D63031] hover:bg-[#D63031]/90 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Bomb className="w-4 h-4" />
+                        炸彈引爆 (全班扣血)
+                      </button>
+                    </div>
                   )}
 
-                  <div className="relative inline-block mb-6">
-                    <motion.div 
-                      animate={bossHp > 0 ? { 
-                        y: [0, -10, 0],
-                        rotate: [-1, 1, -1]
-                      } : { scale: 0.8, opacity: 0.5 }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="text-8xl"
-                    >
-                      {bossDifficulty === 'simple' && '🦖'}
-                      {bossDifficulty === 'medium' && '🐉'}
-                      {bossDifficulty === 'hard' && '👹'}
-                      {bossDifficulty === 'demon' && '👿'}
-                    </motion.div>
-                  </div>
-
-                  <div className="max-w-md mx-auto">
-                    <div className="flex justify-between items-end mb-2">
-                       <span className={`text-sm font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.bossHp}</span>
-                       <span className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{bossHp} / {maxBossHp}</span>
-                    </div>
-                    <div className={`h-6 rounded-full overflow-hidden border-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'}`}>
-                      <motion.div 
-                        initial={{ width: '100%' }}
-                        animate={{ width: `${(bossHp / maxBossHp) * 100}%` }}
-                        className={`h-full transition-all duration-500 ${
-                          bossDifficulty === 'simple' ? 'bg-[#00B894]' :
-                          bossDifficulty === 'medium' ? 'bg-[#F1C40F]' :
-                          bossDifficulty === 'hard' ? 'bg-[#E74C3C]' : 'bg-[#9B59B6]'
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
-                  {students.filter(s => selectedCombatStudents.has(s.id)).map(student => (
-                    <motion.div
-                      key={student.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleAttackBoss(student)}
-                      className={`p-2 rounded-2xl border shadow-sm hover:shadow-md transition-all group relative cursor-pointer flex flex-col items-center ${
-                        theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
-                      }`}
-                    >
-                      <div className={`relative w-12 h-12 mb-2 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'}`}>
-                        {student.equippedSpecialPet ? (
-                          <img 
-                            src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
-                            alt="" 
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : student.equippedPet !== null ? (
-                          <span className="text-3xl flex items-center justify-center h-full">
-                            {getPetEmoji(student.equippedPet)}
-                          </span>
-                        ) : (
-                          <img 
-                            src={student.avatar} 
-                            alt={student.name}
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        )}
-                      </div>
-                      <p className={`font-bold text-[10px] truncate w-full text-center ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>{student.name}</p>
-                      <div className={`mt-1 flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-[#a29bfe]' : 'text-[#6C5CE7]'}`}>
-                        <Zap className="w-2.5 h-2.5 fill-current" />
-                        {getPetPower(student)}
-                      </div>
-
-                      {isTeacher && !loggedInStudentId && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAttackBoss(student, true);
-                          }}
-                          disabled={isBossDefeated || criticalUsed[student.id]}
-                          className={`mt-2 w-full py-1 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 ${
-                            criticalUsed[student.id] 
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                              : 'bg-[#F368E0] text-white hover:scale-105 shadow-sm'
+                  {/* Main Grid Column */}
+                  <div className={`space-y-8 ${isTeacher && !loggedInStudentId ? 'md:col-span-3' : 'md:col-span-4'} ${isScreenShaking ? 'animate-shake' : ''}`}>
+                    <div className={`rounded-[3rem] p-8 shadow-sm border text-center relative overflow-hidden ${
+                      theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                    }`}>
+                      {isBossDefeated && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`absolute inset-0 z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar backdrop-blur-md ${
+                            theme === 'dark' ? 'bg-[#2D3436]/95' : 'bg-white/95'
                           }`}
                         >
-                          <Flame className="w-2.5 h-2.5" />
-                          暴擊
-                        </button>
+                          <div className="flex flex-col items-center py-8 w-full max-w-md">
+                            <Trophy className="w-20 h-20 text-[#F1C40F] mb-4 shrink-0" />
+                            <h2 className={`text-4xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.victory}</h2>
+                            <p className={`font-bold mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.rewards}</p>
+                            
+                            <div className="w-full space-y-3 mb-8">
+                              {Object.entries(damageDealt)
+                                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                                .map(([id, damage], index) => {
+                                  const student = students.find(s => s.id === id);
+                                  const hearts = studentHearts[id] !== undefined ? studentHearts[id] : 3;
+                                  const isHeartsDepleted = hearts <= 0;
+                                  
+                                  return (
+                                    <div key={id} className={`flex items-center justify-between p-4 rounded-2xl border ${
+                                      theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
+                                    }`}>
+                                      <div className="flex items-center gap-3">
+                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white ${
+                                          index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#DFE6E9] text-[#636E72]'
+                                        }`}>
+                                          {index + 1}
+                                        </span>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-white'}`}>
+                                          {student?.equippedSpecialPet ? (
+                                            <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                          ) : student?.equippedPet !== null ? (
+                                            <span className="text-xl">
+                                              {getPetEmoji(student?.equippedPet)}
+                                            </span>
+                                          ) : (
+                                            <img src={student?.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                          )}
+                                        </div>
+                                        <div className="flex flex-col items-start">
+                                          <span className={`font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{student?.name}</span>
+                                          {isHeartsDepleted && <span className="text-[9px] text-[#E74C3C] font-black">💔 愛心耗盡 (獎勵減半)</span>}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        <span className="text-xs font-black text-[#636E72]">{damage} DMG</span>
+                                        <div className="flex gap-1">
+                                          {index === 0 && (
+                                            <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm">
+                                              <Medal className="w-4 h-4 fill-current"/>
+                                              {isHeartsDepleted ? '1' : '3'}
+                                            </div>
+                                          )}
+                                          {index === 1 && (
+                                            <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm">
+                                              <Medal className="w-4 h-4 fill-current"/>
+                                              {isHeartsDepleted ? '1' : '2'}
+                                            </div>
+                                          )}
+                                          {index === 2 && (
+                                            <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm">
+                                              <Medal className="w-4 h-4 fill-current"/>
+                                              {isHeartsDepleted ? '0' : '1'}
+                                            </div>
+                                          )}
+                                          {index > 2 && (
+                                            <div className="flex items-center gap-1 text-[#F39C12] font-black text-sm">
+                                              <Coins className="w-4 h-4 fill-current"/>
+                                              {isHeartsDepleted ? '25' : '50'}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+    
+                            <button 
+                              onClick={() => setBossDifficulty(null)}
+                              className="bg-[#6C5CE7] text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-[#6C5CE7]/20 hover:scale-105 transition-transform shrink-0"
+                            >
+                              {t.save}
+                            </button>
+                          </div>
+                        </motion.div>
                       )}
-                      
-                      {damageDealt[student.id] > 0 && (
-                        <div className="absolute top-1 right-1 bg-[#6C5CE7] text-white text-[7px] font-black px-1 py-0.5 rounded-full">
-                          -{damageDealt[student.id]}
+    
+                      <div className="relative inline-block mb-6">
+                        <motion.div 
+                          animate={bossHp > 0 ? { 
+                            y: [0, -10, 0],
+                            rotate: [-1, 1, -1]
+                          } : { scale: 0.8, opacity: 0.5 }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                          className="text-8xl"
+                        >
+                          {bossDifficulty === 'simple' && '🦖'}
+                          {bossDifficulty === 'medium' && '🐉'}
+                          {bossDifficulty === 'hard' && '👹'}
+                          {bossDifficulty === 'demon' && '👿'}
+                        </motion.div>
+                      </div>
+    
+                      <div className="max-w-md mx-auto">
+                        <div className="flex justify-between items-end mb-2">
+                           <span className={`text-sm font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.bossHp}</span>
+                           <span className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{bossHp} / {maxBossHp}</span>
                         </div>
-                      )}
-                    </motion.div>
-                  ))}
+                        <div className={`h-6 rounded-full overflow-hidden border-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'}`}>
+                          <motion.div 
+                            initial={{ width: '100%' }}
+                            animate={{ width: `${(bossHp / maxBossHp) * 100}%` }}
+                            className={`h-full transition-all duration-500 ${
+                              bossDifficulty === 'simple' ? 'bg-[#00B894]' :
+                              bossDifficulty === 'medium' ? 'bg-[#F1C40F]' :
+                              bossDifficulty === 'hard' ? 'bg-[#E74C3C]' : 'bg-[#9B59B6]'
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Anger Progress Bar */}
+                      <div className="max-w-md mx-auto mt-6">
+                        <div className="flex justify-between items-end mb-2">
+                           <span className={`text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
+                             👹 憤怒值
+                           </span>
+                           <span className="text-xs font-black text-[#E74C3C]">
+                             {bossAnger}%
+                           </span>
+                        </div>
+                        <div 
+                          onClick={() => {
+                            if (isTeacher && !loggedInStudentId) {
+                              increaseAnger(15);
+                              playSound('success');
+                            }
+                          }}
+                          title={isTeacher && !loggedInStudentId ? "老師點擊增加 15% 憤怒" : undefined}
+                          className={`h-6 rounded-full overflow-hidden border-2 relative cursor-pointer group ${
+                            theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'
+                          }`}
+                        >
+                          <motion.div 
+                            initial={{ width: '0%' }}
+                            animate={{ width: `${bossAnger}%` }}
+                            className="h-full bg-gradient-to-r from-[#F1C40F] to-[#E74C3C] transition-all duration-300"
+                          />
+                          {isTeacher && !loggedInStudentId && (
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/15">
+                              <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                                點擊 +15% 憤怒
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+    
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
+                      {students.filter(s => selectedCombatStudents.has(s.id)).map(student => {
+                        const heartsCount = studentHearts[student.id] !== undefined ? studentHearts[student.id] : 3;
+                        const isDead = heartsCount <= 0;
+                        
+                        return (
+                          <motion.div
+                            key={student.id}
+                            whileHover={isDead ? {} : { scale: 1.05 }}
+                            whileTap={isDead ? {} : { scale: 0.95 }}
+                            onClick={() => {
+                              if (isDead) {
+                                playSound('error');
+                                alert('此學生已無愛心，無法攻擊怪獸！');
+                                return;
+                              }
+                              handleAttackBoss(student);
+                            }}
+                            className={`p-2 rounded-2xl border shadow-sm hover:shadow-md transition-all group relative flex flex-col items-center ${isDead ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer'} ${
+                              theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                            }`}
+                          >
+                            <div className={`relative w-12 h-12 mb-2 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'}`}>
+                              {student.equippedSpecialPet ? (
+                                <img 
+                                  src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
+                                  alt="" 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : student.equippedPet !== null ? (
+                                <span className="text-3xl flex items-center justify-center h-full">
+                                  {getPetEmoji(student.equippedPet)}
+                                </span>
+                              ) : (
+                                <img 
+                                  src={student.avatar} 
+                                  alt={student.name}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              )}
+                            </div>
+                            <p className={`font-bold text-[10px] truncate w-full text-center ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>{student.name}</p>
+                            
+                            {/* Row of hearts */}
+                            <div className="flex gap-0.5 mt-1 justify-center">
+                              {[...Array(3)].map((_, i) => (
+                                <Heart 
+                                  key={i} 
+                                  className={`w-3 h-3 ${i < heartsCount ? 'fill-[#E74C3C] text-[#E74C3C]' : 'text-gray-300 dark:text-gray-600'}`} 
+                                />
+                              ))}
+                            </div>
+
+                            <div className={`mt-1.5 flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-[#a29bfe]' : 'text-[#6C5CE7]'}`}>
+                              <Zap className="w-2.5 h-2.5 fill-current" />
+                              {getPetPower(student)}
+                            </div>
+    
+                            {isTeacher && !loggedInStudentId && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isDead) {
+                                    playSound('error');
+                                    alert('此學生已無愛心，無法攻擊怪獸！');
+                                    return;
+                                  }
+                                  handleAttackBoss(student, true);
+                                }}
+                                disabled={isBossDefeated || criticalUsed[student.id] || isDead}
+                                className={`mt-2 w-full py-1 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 ${
+                                  criticalUsed[student.id] 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-[#F368E0] text-white hover:scale-105 shadow-sm'
+                                }`}
+                              >
+                                <Flame className="w-2.5 h-2.5" />
+                                暴擊
+                              </button>
+                            )}
+                            
+                            {damageDealt[student.id] > 0 && (
+                              <div className="absolute top-1 right-1 bg-[#6C5CE7] text-white text-[7px] font-black px-1 py-0.5 rounded-full">
+                                -{damageDealt[student.id]}
+                              </div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
