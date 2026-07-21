@@ -939,6 +939,8 @@ export default function App() {
   const [activeClassId, setActiveClassId] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
   const [myClasses, setMyClasses] = useState<{id: string, name: string}[]>([]);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false); // 預設是 false（關閉狀態）
+  const [aiInputText, setAiInputText] = useState(""); // AI 輸入框內容
   
   // Homework State
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
@@ -1484,10 +1486,10 @@ export default function App() {
     <div className="relative">
       <button 
         onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-        className="px-4 py-2 hover:bg-[#F1F3F5] rounded-xl transition-colors flex items-center gap-2 border border-[#E1E4E8] bg-white shadow-sm"
+        className="px-4 py-2 hover:bg-zinc-800 rounded-xl transition-colors flex items-center gap-2 border border-zinc-700 bg-black shadow-sm"
       >
-        <Globe className="w-5 h-5 text-[#00B894]" />
-        <span className="text-sm font-bold text-[#2D3436]">{t.language}</span>
+        <Globe className="w-5 h-5 text-white" />
+        <span className="text-sm font-bold text-white">{t.language}</span>
       </button>
       
       <AnimatePresence>
@@ -1504,16 +1506,16 @@ export default function App() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-[#F1F3F5] overflow-hidden z-50"
+              className="absolute right-0 mt-2 w-48 bg-black rounded-2xl shadow-xl border border-zinc-700 overflow-hidden z-50"
             >
               <div className="p-2">
-                <div className="px-4 py-2 text-[10px] font-black text-[#B2BEC3] uppercase tracking-widest flex items-center gap-2">
+                <div className="px-4 py-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                   <Languages className="w-3 h-3" />
                   {t.language}
                 </div>
                 <button 
                   onClick={() => { setLanguage('zh-Hans'); setIsLangMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh-Hans' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-[#636E72] hover:bg-[#F1F3F5]'}`}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-colors ${language === 'zh-Hans' ? 'bg-[#00B894]/10 text-[#00B894]' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
                 >
                   华文（简体）
                 </button>
@@ -2029,9 +2031,18 @@ export default function App() {
             </div>
           </motion.div>
         </div>
-
         {user ? (
           <div className="max-w-5xl w-full mx-auto z-10">
+            {/* AI 按鈕 - 僅在選擇班級界面時出現 */}
+            <div className="mb-6">
+              <button 
+                onClick={() => setIsAIModalOpen(true)}
+                className="px-6 py-3 rounded-2xl text-white bg-[#6C5CE7] hover:scale-105 active:scale-95 transition-all shadow-md font-bold"
+              >
+                AI
+              </button>
+            </div>
+
             <h2 className="text-2xl font-black text-[#2D3436] mb-8">{t.myClasses}</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -2176,6 +2187,17 @@ export default function App() {
         {/* Decorative elements */}
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#00B894]/5 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#F1C40F]/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        {/* 全黑 AI 介面 Modal (讓登陸/班級選擇頁面點擊 AI 時能立即彈出) */}
+        {isAIModalOpen && (
+          <div 
+            className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-6"
+            onClick={() => setIsAIModalOpen(false)}
+          >
+            {/* 提示點擊任何地方退出 */}
+            <span className="text-gray-600 text-xs select-none">（點擊任意位置退出黑色介面）</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -3706,22 +3728,20 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        className={`w-full max-w-lg rounded-[2.5rem] p-8 text-center shadow-2xl border flex flex-col max-h-[80vh] ${
-                          theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
-                        }`}
+                        className={`w-full max-w-lg rounded-[2.5rem] p-8 text-center shadow-2xl border flex flex-col max-h-[80vh] bg-[#353B48] border-[#4A5568]`}
                       >
                         <div className="flex justify-between items-center mb-6">
-                          <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                          <h3 className="text-xl font-black text-white">
                             👹 選擇被反擊的學生
                           </h3>
                           <button
                             onClick={() => setIsCounterSelectOpen(false)}
-                            className={`p-2 rounded-full hover:bg-black/5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}
+                            className="p-2 rounded-full hover:bg-black/10 text-gray-400 hover:text-white transition-colors"
                           >
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <p className={`font-bold mb-4 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-[#636E72]'}`}>
+                        <p className="font-bold mb-4 text-xs text-gray-300">
                           請選擇下方其中一位參戰學生，扣除其 1 顆愛心：
                         </p>
                         
@@ -3746,7 +3766,7 @@ export default function App() {
                                       : 'hover:scale-105 active:scale-95 border-red-500/10 hover:border-red-500 bg-red-500/5'
                                   }`}
                                 >
-                                  <div className={`w-11 h-11 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-[#F1F3F5]`}>
+                                  <div className="w-11 h-11 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-[#F1F3F5]">
                                     {student.equippedSpecialPet ? (
                                       <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
                                     ) : student.equippedPet !== null ? (
@@ -3755,7 +3775,7 @@ export default function App() {
                                       <img src={student.avatar} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
                                     )}
                                   </div>
-                                  <span className={`text-[11px] font-black truncate w-full ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>
+                                  <span className="text-[11px] font-black truncate w-full text-white">
                                     {student.name}
                                   </span>
                                   <div className="flex gap-0.5 justify-center mt-0.5">
@@ -3765,7 +3785,7 @@ export default function App() {
                                         className={`w-3 h-3 ${
                                           i < hearts 
                                             ? 'fill-[#E74C3C] text-[#E74C3C]' 
-                                            : 'text-gray-300'
+                                            : 'text-gray-500'
                                         }`} 
                                       />
                                     ))}
@@ -3820,21 +3840,17 @@ export default function App() {
 
                   {/* Main Grid Column */}
                   <div className={`space-y-8 ${isTeacher && !loggedInStudentId ? 'md:col-span-3' : 'md:col-span-4'} ${isScreenShaking ? 'animate-shake' : ''}`}>
-                    <div className={`rounded-[3rem] p-8 shadow-sm border text-center relative overflow-hidden ${
-                      theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
-                    }`}>
+                    <div className="rounded-[3rem] p-8 shadow-2xl border border-purple-900/20 text-center relative overflow-hidden bg-gradient-to-b from-[#1a1726] via-[#120f1a] to-[#0d0b13] text-white">
                       {isBossDefeated && (
                         <motion.div 
                           initial={{ opacity: 0, scale: 0.5 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className={`absolute inset-0 z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar backdrop-blur-md ${
-                            theme === 'dark' ? 'bg-[#2D3436]/95' : 'bg-white/95'
-                          }`}
+                          className="absolute inset-0 z-10 flex flex-col items-center justify-start p-8 overflow-y-auto custom-scrollbar backdrop-blur-md bg-slate-950/95"
                         >
                           <div className="flex flex-col items-center py-8 w-full max-w-md">
                             <Trophy className="w-20 h-20 text-[#F1C40F] mb-4 shrink-0" />
-                            <h2 className={`text-4xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{t.victory}</h2>
-                            <p className={`font-bold mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.rewards}</p>
+                            <h2 className="text-4xl font-black mb-2 text-white">{t.victory}</h2>
+                            <p className="font-bold mb-8 text-gray-400">{t.rewards}</p>
                             
                             <div className="w-full space-y-3 mb-8">
                               {Object.entries(damageDealt)
@@ -3845,16 +3861,14 @@ export default function App() {
                                   const isHeartsDepleted = hearts <= 0;
                                   
                                   return (
-                                    <div key={id} className={`flex items-center justify-between p-4 rounded-2xl border ${
-                                      theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-[#F8F9FA] border-[#E1E4E8]'
-                                    }`}>
+                                    <div key={id} className="flex items-center justify-between p-4 rounded-2xl border bg-[#1c1a24] border-slate-800">
                                       <div className="flex items-center gap-3">
                                         <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white ${
-                                          index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#DFE6E9] text-[#636E72]'
+                                          index === 0 ? 'bg-[#F1C40F]' : index === 1 ? 'bg-[#BDC3C7]' : index === 2 ? 'bg-[#E67E22]' : 'bg-[#2D3436] text-[#636E72]'
                                         }`}>
                                           {index + 1}
                                         </span>
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-white'}`}>
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-sm bg-[#2D3436]">
                                           {student?.equippedSpecialPet ? (
                                             <img src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                           ) : student?.equippedPet !== null ? (
@@ -3866,12 +3880,12 @@ export default function App() {
                                           )}
                                         </div>
                                         <div className="flex flex-col items-start">
-                                          <span className={`font-bold ${theme === 'dark' ? 'text-white' : ''}`}>{student?.name}</span>
+                                          <span className="font-bold text-white">{student?.name}</span>
                                           {isHeartsDepleted && <span className="text-[9px] text-[#E74C3C] font-black">💔 愛心耗盡 (獎勵減半)</span>}
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-4">
-                                        <span className="text-xs font-black text-[#636E72]">{damage} DMG</span>
+                                        <span className="text-xs font-black text-slate-400">{damage} DMG</span>
                                         <div className="flex gap-1">
                                           {index === 0 && (
                                             <div className="flex items-center gap-1 text-[#6C5CE7] font-black text-sm">
@@ -3914,14 +3928,22 @@ export default function App() {
                         </motion.div>
                       )}
     
-                      <div className="relative inline-block mb-6">
+                      {/* Ambient background glow */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-rose-500/10 rounded-full blur-[80px] pointer-events-none" />
+                      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-purple-500/15 rounded-full blur-[60px] pointer-events-none" />
+
+                      {/* Boss Avatar Centered & Glowing */}
+                      <div className="relative inline-flex items-center justify-center p-6 mb-4">
+                        {/* Halo behind boss */}
+                        <div className="absolute inset-0 bg-radial from-[#e74c3c]/15 to-transparent rounded-full blur-xl animate-pulse" />
+                        
                         <motion.div 
                           animate={bossHp > 0 ? { 
-                            y: [0, -10, 0],
-                            rotate: [-1, 1, -1]
+                            y: [0, -12, 0],
+                            scale: [1, 1.03, 1],
                           } : { scale: 0.8, opacity: 0.5 }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                          className="text-8xl"
+                          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                          className="text-9xl relative z-10 drop-shadow-[0_15px_15px_rgba(231,76,60,0.35)] filter"
                         >
                           {bossDifficulty === 'simple' && '🦖'}
                           {bossDifficulty === 'medium' && '🐉'}
@@ -3929,64 +3951,102 @@ export default function App() {
                           {bossDifficulty === 'demon' && '👿'}
                         </motion.div>
                       </div>
-    
-                      <div className="max-w-md mx-auto">
-                        <div className="flex justify-between items-end mb-2">
-                           <span className={`text-sm font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>{t.bossHp}</span>
-                           <span className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-[#2D3436]'}`}>{bossHp} / {maxBossHp}</span>
+
+                      {/* Boss Name & HP Bar Area */}
+                      <div className="max-w-2xl mx-auto mt-6">
+                        {/* Boss Name & HP Count */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-3 gap-2 px-1">
+                          <span className="text-2xl sm:text-3xl font-black italic tracking-wider text-white uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                            {bossDifficulty === 'simple' ? 'PRIMAL BEAST' :
+                             bossDifficulty === 'medium' ? 'ANCIENT DRAGON' :
+                             bossDifficulty === 'hard' ? 'DEMON CHIEF' : 'MECHANICAL OVERLORD'}
+                          </span>
+                          <span className="text-lg sm:text-xl font-extrabold text-rose-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                            {bossHp.toLocaleString()} <span className="text-slate-500 font-bold text-sm">/</span> {maxBossHp.toLocaleString()} <span className="text-rose-400 text-xs tracking-wider font-bold">HP</span>
+                          </span>
                         </div>
-                        <div className={`h-6 rounded-full overflow-hidden border-2 ${theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'}`}>
+
+                        {/* HP Progress Bar Container */}
+                        <div className="h-8 rounded-full bg-[#16141c] border-2 border-slate-700/60 p-[3px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8),0_0_15px_rgba(231,76,60,0.15)] relative overflow-hidden flex items-center">
                           <motion.div 
                             initial={{ width: '100%' }}
                             animate={{ width: `${(bossHp / maxBossHp) * 100}%` }}
-                            className={`h-full transition-all duration-500 ${
-                              bossDifficulty === 'simple' ? 'bg-[#00B894]' :
-                              bossDifficulty === 'medium' ? 'bg-[#F1C40F]' :
-                              bossDifficulty === 'hard' ? 'bg-[#E74C3C]' : 'bg-[#9B59B6]'
-                            }`}
-                          />
+                            className="h-full rounded-full transition-all duration-500 relative overflow-hidden"
+                            style={{
+                              background: 'linear-gradient(90deg, #ef4444 0%, #f97316 50%, #eab308 100%)',
+                            }}
+                          >
+                            {/* Repeating Diagonal Stripe overlay */}
+                            <div 
+                              className="absolute inset-0 opacity-20"
+                              style={{
+                                backgroundImage: 'linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent)',
+                                backgroundSize: '30px 30px',
+                              }}
+                            />
+                          </motion.div>
+                          
+                          {/* Percentage label in center */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs sm:text-sm font-black text-white drop-shadow-[0_1.5px_2px_rgba(0,0,0,1)] tracking-wider">
+                              {((bossHp / maxBossHp) * 100).toFixed(1)}%
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Anger Progress Bar */}
-                      <div className="max-w-md mx-auto mt-6">
-                        <div className="flex justify-between items-end mb-2">
-                           <span className={`text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-[#636E72]'}`}>
-                             👹 憤怒值
-                           </span>
-                           <span className="text-xs font-black text-[#E74C3C]">
-                             {bossAnger}%
-                           </span>
+                      {/* Boss Rage Section */}
+                      <div className="max-w-2xl mx-auto mt-6">
+                        {/* Rage Label */}
+                        <div className="flex justify-between items-center mb-1.5 px-1">
+                          <span className="text-xs font-black uppercase tracking-[0.15em] text-amber-500 flex items-center gap-1.5 drop-shadow">
+                            <Flame className="w-3.5 h-3.5 animate-pulse text-amber-500 fill-amber-500" />
+                            BOSS RAGE
+                          </span>
+                          <span className="text-xs font-black text-amber-400 tracking-wider">
+                            {bossAnger}%
+                          </span>
                         </div>
-                        <div 
+
+                        {/* Clickable accumulation bar */}
+                        <button 
                           onClick={() => {
                             if (isTeacher && !loggedInStudentId) {
                               increaseAnger(15);
                               playSound('success');
                             }
                           }}
-                          title={isTeacher && !loggedInStudentId ? "老師點擊增加 15% 憤怒" : undefined}
-                          className={`h-6 rounded-full overflow-hidden border-2 relative cursor-pointer group ${
-                            theme === 'dark' ? 'bg-[#2D3436] border-[#4A5568]' : 'bg-[#F1F3F5] border-[#E1E4E8]'
+                          disabled={!(isTeacher && !loggedInStudentId) || isBossDefeated || bossHp <= 0}
+                          className={`w-full rounded-xl py-2 px-4 text-center transition-all duration-300 font-extrabold text-[11px] sm:text-xs uppercase tracking-widest relative overflow-hidden border ${
+                            isTeacher && !loggedInStudentId
+                              ? 'bg-[#121118] border-amber-500/40 text-amber-400/90 hover:text-amber-300 hover:border-amber-400 hover:bg-amber-500/10 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] active:scale-[0.98]'
+                              : 'bg-[#121118]/60 border-slate-800/80 text-slate-500 cursor-not-allowed'
                           }`}
                         >
-                          <motion.div 
-                            initial={{ width: '0%' }}
-                            animate={{ width: `${bossAnger}%` }}
-                            className="h-full bg-gradient-to-r from-[#F1C40F] to-[#E74C3C] transition-all duration-300"
-                          />
-                          {isTeacher && !loggedInStudentId && (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/15">
-                              <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                                點擊 +15% 憤怒
-                              </span>
-                            </div>
+                          {isTeacher && !loggedInStudentId ? (
+                            <>
+                              PRESS TO ACCUMULATE RAGE (+15%)
+                              {/* Glow progress overlay from behind */}
+                              <div 
+                                className="absolute left-0 top-0 bottom-0 bg-amber-500/5 transition-all duration-300 pointer-events-none"
+                                style={{ width: `${bossAnger}%` }}
+                              />
+                            </>
+                          ) : (
+                            "RAGE LEVEL INDICATOR"
                           )}
-                        </div>
+                        </button>
                       </div>
                     </div>
-    
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
+     
+                    {/* Centered ELITE VANGUARD title */}
+                    <div className="text-center mt-12 mb-6">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-slate-400 drop-shadow">
+                        ELITE VANGUARD
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4 justify-items-center">
                       {students.filter(s => selectedCombatStudents.has(s.id)).map(student => {
                         const heartsCount = studentHearts[student.id] !== undefined ? studentHearts[student.id] : 3;
                         const isDead = heartsCount <= 0;
@@ -4004,11 +4064,18 @@ export default function App() {
                               }
                               handleAttackBoss(student);
                             }}
-                            className={`p-2 rounded-2xl border shadow-sm hover:shadow-md transition-all group relative flex flex-col items-center ${isDead ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer'} ${
-                              theme === 'dark' ? 'bg-[#353B48] border-[#4A5568]' : 'bg-white border-[#E1E4E8]'
+                            className={`p-3 rounded-[1.5rem] border-2 shadow-lg transition-all group relative flex flex-col items-center w-full max-w-[120px] mx-auto ${
+                              isDead 
+                                ? 'opacity-30 border-transparent bg-slate-950/40 cursor-not-allowed' 
+                                : 'bg-[#16141d]/90 border-slate-800/80 hover:border-rose-500/40 hover:bg-[#1a1724] cursor-pointer'
                             }`}
                           >
-                            <div className={`relative w-12 h-12 mb-2 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${theme === 'dark' ? 'bg-[#2D3436]' : 'bg-[#F1F3F5]'}`}>
+                            {/* Pet/Avatar Container */}
+                            <div className={`relative w-14 h-14 mb-2 rounded-2xl flex items-center justify-center overflow-hidden border-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] transition-colors ${
+                              isDead 
+                                ? 'bg-slate-900 border-slate-800' 
+                                : 'bg-[#1e1b29] border-rose-500/30 group-hover:border-rose-500/60'
+                            }`}>
                               {student.equippedSpecialPet ? (
                                 <img 
                                   src={specialPets.find(p => p.id === student.equippedSpecialPet)?.imageUrl} 
@@ -4029,23 +4096,38 @@ export default function App() {
                                 />
                               )}
                             </div>
-                            <p className={`font-bold text-[10px] truncate w-full text-center ${theme === 'dark' ? 'text-gray-200' : 'text-[#2D3436]'}`}>{student.name}</p>
                             
-                            {/* Row of hearts */}
-                            <div className="flex gap-0.5 mt-1 justify-center">
-                              {[...Array(3)].map((_, i) => (
+                            {/* Row of hearts under Avatar Container */}
+                            <div className="flex gap-0.5 mb-2 justify-center">
+                              {Array.from({ length: 3 }).map((_, i) => (
                                 <Heart 
                                   key={i} 
-                                  className={`w-3 h-3 ${i < heartsCount ? 'fill-[#E74C3C] text-[#E74C3C]' : 'text-gray-300 dark:text-gray-600'}`} 
+                                  className={`w-3.5 h-3.5 transition-all ${
+                                    i < heartsCount 
+                                      ? 'fill-rose-500 text-rose-500 filter drop-shadow-[0_0_2px_rgba(239,68,68,0.5)]' 
+                                      : 'text-slate-700 fill-slate-950'
+                                  }`} 
                                 />
                               ))}
                             </div>
 
-                            <div className={`mt-1.5 flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-[#a29bfe]' : 'text-[#6C5CE7]'}`}>
-                              <Zap className="w-2.5 h-2.5 fill-current" />
-                              {getPetPower(student)}
+                            {/* Student Name Capsule */}
+                            <div className={`px-2.5 py-1 rounded-full text-[10px] font-black truncate w-full text-center transition-all ${
+                              isDead 
+                                ? 'bg-slate-950 text-slate-500 border border-slate-800' 
+                                : 'bg-[#242132] text-white border border-slate-700/60 group-hover:bg-[#2d293f] group-hover:border-slate-600'
+                            }`}>
+                              {student.name}
+                            </div>
+
+                            {/* Power Stat */}
+                            <div className={`text-[10px] font-black tracking-wider flex items-center justify-center gap-0.5 transition-colors mt-1 ${
+                              isDead ? 'text-slate-600' : 'text-sky-400 group-hover:text-sky-300'
+                            }`}>
+                              {getPetPower(student).toLocaleString()} PWR
                             </div>
     
+                            {/* Critical attack button for teachers */}
                             {isTeacher && !loggedInStudentId && (
                               <button 
                                 onClick={(e) => {
@@ -4058,10 +4140,10 @@ export default function App() {
                                   handleAttackBoss(student, true);
                                 }}
                                 disabled={isBossDefeated || criticalUsed[student.id] || isDead}
-                                className={`mt-2 w-full py-1 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 ${
+                                className={`mt-2 w-full py-1 rounded-xl text-[9px] font-black transition-all flex items-center justify-center gap-1 border ${
                                   criticalUsed[student.id] 
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                    : 'bg-[#F368E0] text-white hover:scale-105 shadow-sm'
+                                    ? 'bg-slate-900 border-transparent text-slate-600 cursor-not-allowed' 
+                                    : 'bg-gradient-to-r from-pink-500 to-rose-500 border-rose-400/30 text-white hover:scale-105 active:scale-95 shadow-lg shadow-rose-500/15'
                                 }`}
                               >
                                 <Flame className="w-2.5 h-2.5" />
@@ -4069,8 +4151,9 @@ export default function App() {
                               </button>
                             )}
                             
+                            {/* Floating DMG POPUP */}
                             {damageDealt[student.id] > 0 && (
-                              <div className="absolute top-1 right-1 bg-[#6C5CE7] text-white text-[7px] font-black px-1 py-0.5 rounded-full">
+                              <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-indigo-600/30 border border-indigo-400/30 animate-bounce">
                                 -{damageDealt[student.id]}
                               </div>
                             )}
@@ -6518,8 +6601,8 @@ export default function App() {
 
                   <button
                     onClick={() => {
-                      setIsFastCoinsModalOpen(false);
-                      setFastCoinShowResult(false);
+                      setIsFastCoinsModalOpen(true);
+                      setFastCoinShowResult(true);
                       setSelectedFastCoinStudentIds([]);
                       setFastCoinResults([]);
                     }}
@@ -6530,6 +6613,54 @@ export default function App() {
                 </div>
               )}
             </motion.div>
+          </div>
+        )}
+        {/* 全黑 AI 介面 Modal */}
+        {isAIModalOpen && (
+          <div 
+            className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-6"
+            onClick={() => setIsAIModalOpen(false)} // 點擊最外層的黑色背景會關閉介面
+          >
+            {/* 內部輸入視窗：使用 e.stopPropagation() 防止點擊輸入框時也觸發外層的關閉事件 */}
+            <div 
+              className="w-full max-w-lg bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-2xl"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <h3 className="text-white text-lg font-bold mb-4">AI 助手</h3>
+              
+              {/* 這裡是打字的地方 (多行輸入框) */}
+              <textarea
+                value={aiInputText}
+                onChange={(e) => setAiInputText(e.target.value)} // 當使用者打字時，更新內容
+                placeholder="請輸入您想對 AI 說的話..."
+                className="w-full h-32 bg-zinc-950 text-white rounded-xl p-4 border border-zinc-800 focus:outline-none focus:border-[#6C5CE7] resize-none mb-4"
+              />
+              
+              {/* 按鈕區域 */}
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setAiInputText(""); // 清空文字
+                    setIsAIModalOpen(false); // 關閉視窗
+                  }}
+                  className="px-4 py-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition-colors"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    console.log("送出的內容:", aiInputText);
+                    // 這裡可以寫後續送給 AI 的邏輯
+                  }}
+                  className="px-6 py-2 rounded-xl text-white bg-[#6C5CE7] hover:bg-[#5B4ED1] transition-colors font-bold"
+                >
+                  送出
+                </button>
+              </div>
+            </div>
+            
+            {/* 提示點擊背景退出 */}
+            <span className="text-zinc-600 text-xs mt-6 select-none">（點擊背景任意位置可退出）</span>
           </div>
         )}
       </AnimatePresence>
